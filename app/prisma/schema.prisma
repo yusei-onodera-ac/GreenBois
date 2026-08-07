@@ -1,0 +1,159 @@
+// GreenVoice TOKYO — Prisma schema
+// データモデルは docs/02-data-model.md のER図に準拠。
+// ローカル開発は SQLite。将来 AWS RDS for PostgreSQL(+PostGIS) へ切り替える想定
+// (docs/04-architecture.md 参照)。切り替え時は provider を "postgresql" に変更し、
+// enum を戻し、地理空間クエリが必要な箇所は生SQL/PostGIS拡張を併用する。
+//
+// 注：SQLiteはネイティブenumをサポートしないため、enum相当の値は
+// String型 + アプリ側(src/lib/enums.ts)のリテラル型・zodスキーマで検証する。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  displayName String
+  lineUserId  String?  @unique
+  userType    String   @default("citizen") // citizen | corporate | admin
+  createdAt   DateTime @default(now())
+
+  proposals     Proposal[]      @relation("UserProposals")
+  signatures    Signature[]
+  statusChanges StatusHistory[] @relation("StatusChangedBy")
+  adminRole     AdminRole?
+
+  @@map("users")
+}
+
+model Proposal {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation("UserProposals", fields: [userId], references: [id])
+  category        String // bench | shade | planting | private_greening | other
+  title           String
+  description     String
+  lat             Float
+  lng             Float
+  landType        String   @default("unknown") // public_metro | public_ward | private | unknown
+  status          String   @default("collecting") // draft | collecting | screening | adopted | in_progress | completed | rejected
+  signatureTarget Int      @default(50)
+  createdAt       DateTime @default(now())
+
+  signatures       Signature[]
+  jurisdiction     Jurisdiction?
+  score            Score?
+  statusHistory    StatusHistory[]
+  attachments      Attachment[]
+  budgetAllocation BudgetAllocation?
+  greenAgreement   GreenAgreement?
+
+  @@map("proposals")
+}
+
+model Signature {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  signedAt   DateTime @default(now())
+
+  @@unique([proposalId, userId]) // 1提案1署名の重複防止
+  @@map("signatures")
+}
+
+model Jurisdiction {
+  id                   String   @id @default(cuid())
+  proposalId           String   @unique
+  proposal             Proposal @relation(fields: [proposalId], references: [id])
+  authorityName        String
+  determinationMethod  String   @default("manual_review") // gis_auto | manual_review
+
+  @@map("jurisdictions")
+}
+
+model Score {
+  id             String   @id @default(cuid())
+  proposalId     String   @unique
+  proposal       Proposal @relation(fields: [proposalId], references: [id])
+  signatureScore Float    @default(0)
+  openDataScore  Float    @default(0)
+  totalScore     Float    @default(0)
+  calculatedAt   DateTime @default(now())
+
+  @@map("scores")
+}
+
+model StatusHistory {
+  id              String   @id @default(cuid())
+  proposalId      String
+  proposal        Proposal @relation(fields: [proposalId], references: [id])
+  fromStatus      String?
+  toStatus        String
+  changedByUserId String
+  changedByUser   User     @relation("StatusChangedBy", fields: [changedByUserId], references: [id])
+  changedAt       DateTime @default(now())
+
+  @@map("status_history")
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  type       String // photo_before | photo_after
+  url        String
+
+  @@map("attachments")
+}
+
+model BudgetCycle {
+  id          String   @id @default(cuid())
+  name        String
+  totalAmount Float
+  startDate   DateTime
+  endDate     DateTime
+
+  allocations BudgetAllocation[]
+
+  @@map("budget_cycles")
+}
+
+model BudgetAllocation {
+  id              String      @id @default(cuid())
+  proposalId      String      @unique
+  proposal        Proposal    @relation(fields: [proposalId], references: [id])
+  budgetCycleId   String
+  budgetCycle     BudgetCycle @relation(fields: [budgetCycleId], references: [id])
+  allocatedAmount Float
+  decisionNote    String?
+
+  @@map("budget_allocations")
+}
+
+model GreenAgreement {
+  id           String    @id @default(cuid())
+  proposalId   String    @unique
+  proposal     Proposal  @relation(fields: [proposalId], references: [id])
+  minimumYears Int       @default(5)
+  agreedAt     DateTime?
+  reportStatus String?
+
+  @@map("green_agreements")
+}
+
+model AdminRole {
+  id                String @id @default(cuid())
+  userId            String @unique
+  user              User   @relation(fields: [userId], references: [id])
+  jurisdictionScope String
+  roleLevel         String @default("reviewer") // reviewer | approver
+
+  @@map("admin_roles")
+}
