@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf9f6;
+  --foreground: #1c2620;
+
+  /* 指定フォントスタック：ヒラギノ角ゴ / メイリオ / MS-Pゴシック / Noto Sans / sans-serif */
+  --font-sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, "MS PGothic",
+    "Noto Sans JP", "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* GreenVoice TOKYO ブランドパレット(プレゼン資料と統一) */
+  --color-forest-950: #101d17;
+  --color-forest-900: #16352a;
+  --color-forest-800: #1b4332;
+  --color-forest-700: #204b39;
+  --color-forest-600: #2d6a4f;
+  --color-forest-500: #3f7a5c;
+  --color-forest-400: #74c69d;
+  --color-forest-300: #a3dcbd;
+  --color-forest-200: #d6f0e2;
+  --color-forest-100: #e9f6ef;
+  --color-forest-50: #f4faf6;
+
+  --color-clay-700: #a8442f;
+  --color-clay-600: #c75b41;
+  --color-clay-500: #e07a5f;
+  --color-clay-400: #e89a85;
+  --color-clay-100: #fbe9e3;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-sans);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-forest-950: var(--color-forest-950);
+  --color-forest-900: var(--color-forest-900);
+  --color-forest-800: var(--color-forest-800);
+  --color-forest-700: var(--color-forest-700);
+  --color-forest-600: var(--color-forest-600);
+  --color-forest-500: var(--color-forest-500);
+  --color-forest-400: var(--color-forest-400);
+  --color-forest-300: var(--color-forest-300);
+  --color-forest-200: var(--color-forest-200);
+  --color-forest-100: var(--color-forest-100);
+  --color-forest-50: var(--color-forest-50);
+
+  --color-clay-700: var(--color-clay-700);
+  --color-clay-600: var(--color-clay-600);
+  --color-clay-500: var(--color-clay-500);
+  --color-clay-400: var(--color-clay-400);
+  --color-clay-100: var(--color-clay-100);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  /* 和文の基本サイズは24pt(=32px)相当を基準に、見出し等はTailwindの text-* で調整 */
+  font-size: 16px;
+  line-height: 1.7;
 }
+
+/* 英数字(半角欧文)は14pt(=約18.7px)基準だが、和文と混在する本文では可読性を優先し
+   Tailwindユーティリティ(text-sm等)側で個別に調整する。ここではフォントスタックの
+   優先順位のみを担保する。 */

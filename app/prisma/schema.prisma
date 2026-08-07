@@ -18,7 +18,8 @@ datasource db {
 
 model User {
   id          String   @id @default(cuid())
-  displayName String
+  displayName String // 本名等。行政ダッシュボード以外には表示しない(公開画面は handle を使う)
+  handle      String   @unique // 公開画面に表示する匿名ID(例: 都民-A1B2)
   lineUserId  String?  @unique
   userType    String   @default("citizen") // citizen | corporate | admin
   createdAt   DateTime @default(now())

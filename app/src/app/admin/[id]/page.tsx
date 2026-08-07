@@ -48,12 +48,12 @@ export default async function AdminProposalDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/admin" className="text-sm text-emerald-700 hover:underline">
+      <Link href="/admin" className="text-sm text-forest-700 hover:underline">
         ← ダッシュボードに戻る
       </Link>
 
       <div className="mt-4 flex items-center gap-2 text-xs">
-        <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 font-medium">
+        <span className="rounded-full bg-forest-100 text-forest-800 px-2 py-0.5 font-medium">
           {PROPOSAL_CATEGORY_LABELS[proposal.category as ProposalCategory] ?? proposal.category}
         </span>
         <span className="rounded-full bg-stone-100 text-stone-700 px-2 py-0.5 font-medium">
@@ -64,9 +64,11 @@ export default async function AdminProposalDetailPage({
         </span>
       </div>
 
-      <h1 className="text-2xl font-bold text-stone-900 mt-2">{proposal.title}</h1>
+      <h1 className="font-display text-2xl font-semibold text-forest-950 mt-2">{proposal.title}</h1>
       <p className="text-sm text-stone-500 mt-1">
-        投稿者: {proposal.user.displayName} ／ 位置: {proposal.lat.toFixed(5)}, {proposal.lng.toFixed(5)}
+        投稿者: <span className="font-medium text-stone-700">{proposal.user.displayName}</span>
+        <span className="text-stone-400"> ({proposal.user.handle})</span>
+        {" "}／ 位置: {proposal.lat.toFixed(5)}, {proposal.lng.toFixed(5)}
       </p>
       <p className="mt-4 text-stone-800 whitespace-pre-wrap">{proposal.description}</p>
 
@@ -85,7 +87,7 @@ export default async function AdminProposalDetailPage({
 
       <div className="mt-6 grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-stone-200 bg-white p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-800">
+          <div className="text-2xl font-bold text-forest-800">
             {proposal.score?.totalScore.toFixed(1) ?? "-"}
           </div>
           <div className="text-xs text-stone-500">優先度スコア</div>
@@ -104,8 +106,8 @@ export default async function AdminProposalDetailPage({
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
-        <h2 className="font-semibold text-emerald-900 mb-3">ステータス変更</h2>
+      <div className="mt-6 rounded-xl border border-forest-200 bg-forest-50 p-5">
+        <h2 className="font-semibold text-forest-900 mb-3">ステータス変更</h2>
         {nextStatuses.length === 0 ? (
           <p className="text-sm text-stone-500">これ以上のステータス変更はできません(終端状態)。</p>
         ) : (
@@ -117,7 +119,7 @@ export default async function AdminProposalDetailPage({
                 type="submit"
                 name="toStatus"
                 value={s}
-                className="rounded-full bg-emerald-700 text-white text-sm font-medium px-4 py-2 hover:bg-emerald-800"
+                className="rounded-full bg-forest-700 text-white text-sm font-medium px-4 py-2 hover:bg-forest-800"
               >
                 「{PROPOSAL_STATUS_LABELS[s]}」に変更
               </button>

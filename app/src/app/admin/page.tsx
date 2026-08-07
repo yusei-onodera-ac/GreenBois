@@ -30,7 +30,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-emerald-900 mb-1">行政ダッシュボード</h1>
+      <h1 className="font-display text-2xl font-semibold text-forest-950 mb-1">行政ダッシュボード</h1>
       <p className="text-sm text-stone-600 mb-6">
         優先度スコアが高い順に表示しています。{user.adminRole?.jurisdictionScope ?? "全域"}担当:{" "}
         {user.displayName}
@@ -50,12 +50,12 @@ export default async function AdminDashboardPage() {
           </thead>
           <tbody>
             {proposals.map((p) => (
-              <tr key={p.id} className="border-t border-stone-100 hover:bg-emerald-50">
-                <td className="px-4 py-3 font-semibold text-emerald-800">
+              <tr key={p.id} className="border-t border-stone-100 hover:bg-forest-50">
+                <td className="px-4 py-3 font-semibold text-forest-800">
                   {p.score?.totalScore.toFixed(1) ?? "-"}
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/admin/${p.id}`} className="text-emerald-700 hover:underline font-medium">
+                  <Link href={`/admin/${p.id}`} className="text-forest-700 hover:underline font-medium">
                     {p.title}
                   </Link>
                 </td>

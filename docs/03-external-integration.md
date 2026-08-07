@@ -14,7 +14,9 @@
 | 本人認証・署名 | LINEログイン（OAuth 2.0） | **実データ連携（本番相当で実装）**。実装コストが低く、都民の利用率も高い | 一般的なLINE Login仕様（要実装時に最新ドキュメント確認） |
 | 本人認証・署名（将来拡張） | マイナンバーカード公的個人認証サービス（JPKI） | **モック／将来拡張**。自社での認定事業者化、または認定事業者（xID・TRUSTDOCK等）への委託が必要で、ハッカソン規模には過大 | [総務省 公的個人認証サービス](https://www.soumu.go.jp/kojinbango_card/kojinninshou-02.html) |
 | 参加型予算・住民参加の制度設計 | Decidim（OSS）などの先行プラットフォーム事例（世田谷区） | 直接連携はしないが、UI/ワークフロー設計の参考事例として利用 | [世田谷区 Decidim活用事例](https://www.city.setagaya.lg.jp/02005/6003.html) |
-| 地図タイル | 国土地理院地図タイル / OpenStreetMap | **実データ連携**（無料・オープンで利用可能） | 各提供元の利用規約に従う（要実装時確認） |
+| 地図タイル | 国土地理院地図タイル（標準地図） | **実データ連携・実装済み**（APIキー不要、`src/lib/mapStyle.ts`） | [国土地理院 開発者向け情報](https://maps.gsi.go.jp/development/ichiran.html) |
+| 住所・地名検索（ジオコーディング） | 国土地理院 住所検索API | **実データ連携・実装済み**（APIキー不要、`src/components/LocationPicker.tsx`の住所/キーワード検索） | [国土地理院 住所検索API](https://msearch.gsi.go.jp/address-search/AddressSearch) |
+| 地図フォントグリフ（クラスタ件数表示等） | OpenMapTiles Fonts | **実データ連携・実装済み**（無償公開CDN、APIキー不要） | `https://fonts.openmaptiles.org/{fontstack}/{range}.pbf` |
 
 ## 2. モック／実データの判断基準
 

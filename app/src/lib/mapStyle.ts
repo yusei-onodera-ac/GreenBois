@@ -6,6 +6,9 @@ import type { StyleSpecification } from "maplibre-gl";
 // 挙げているものと同一で、実際に地名・道路が表示される実データソース。
 export const GSI_MAP_STYLE: StyleSpecification = {
   version: 8,
+  // クラスタ件数などのラベル(symbolレイヤー)描画に必要なフォントグリフ(PBF)。
+  // OpenMapTiles Fonts(無償・APIキー不要の公開CDN)を利用。
+  glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
   sources: {
     gsi: {
       type: "raster",

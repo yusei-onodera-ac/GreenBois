@@ -20,7 +20,8 @@ erDiagram
 
     USER {
       string id PK
-      string display_name
+      string display_name "本名等。行政ダッシュボード以外には非表示"
+      string handle "公開画面用の匿名ID（例: 都民-A1B2）"
       string line_user_id "LINEログイン識別子（ハッシュ化）"
       string user_type "citizen | corporate | admin"
       datetime created_at
@@ -118,6 +119,7 @@ erDiagram
 - **`STATUS_HISTORY` を持つ理由**：原案の「公共デザインの視点：民主的統制」（判断根拠の透明化・異議申立て可能性）に対応するため、ステータス変更を誰が・いつ行ったかを追跡可能にする。
 - **`GREEN_AGREEMENT` を独立エンティティにした理由**：原案の「③私有地緑化の権利と維持管理」対策（緑地協定の締結を助成要件化）をデータとして表現する。
 - **`BUDGET_CYCLE` / `BUDGET_ALLOCATION` は実際の会計処理と分離**：[01-requirements.md](./01-requirements.md) のスコープ定義どおり、実予算執行（振込等）は対象外のため、あくまで「決定を記録する」台帳としてのみ扱う。
+- **`USER.handle` を `display_name` と分離した理由**：提案の投稿者名が公開画面にそのまま出ると個人情報の観点で問題があるため、公開用の匿名ID（handle）を別に持たせ、公開画面（提案詳細・進捗履歴等）は`handle`のみを参照する。本名（`display_name`）を参照できるのは行政ダッシュボードに限定する（[01-requirements.md](./01-requirements.md) 非機能要件「データ保護」）。
 
 ## 3. MVPで簡略化する点（要検証）
 

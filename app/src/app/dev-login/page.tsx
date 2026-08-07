@@ -16,14 +16,14 @@ export default async function DevLoginPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="text-2xl font-bold text-emerald-900 mb-2">ログイン(開発用スタブ)</h1>
+      <h1 className="font-display text-2xl font-semibold text-forest-950 mb-2">ログイン(開発用スタブ)</h1>
       <p className="text-sm text-stone-600 mb-6">
         本番はLINEログインを想定していますが、ローカル開発中はデモユーザーを選んでログインできます。
         (docs/03-external-integration.md参照)
       </p>
 
       {currentUser && (
-        <div className="mb-6 rounded-lg bg-white border border-emerald-200 p-4 flex items-center justify-between">
+        <div className="mb-6 rounded-lg bg-white border border-forest-200 p-4 flex items-center justify-between">
           <span className="text-sm">
             現在ログイン中: <strong>{currentUser.displayName}</strong>
           </span>
@@ -41,7 +41,7 @@ export default async function DevLoginPage() {
             <input type="hidden" name="userId" value={u.id} />
             <button
               type="submit"
-              className="w-full text-left rounded-lg border border-stone-200 bg-white p-4 hover:border-emerald-500 hover:bg-emerald-50 transition-colors"
+              className="w-full text-left rounded-lg border border-stone-200 bg-white p-4 hover:border-forest-500 hover:bg-forest-50 transition-colors"
             >
               <div className="font-semibold">{u.displayName}</div>
               <div className="text-xs text-stone-500">

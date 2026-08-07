@@ -12,7 +12,7 @@ export default async function MyPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-10 text-center">
         <p className="text-stone-600 mb-4">マイページを見るにはログインが必要です。</p>
-        <Link href="/dev-login" className="text-emerald-700 font-semibold hover:underline">
+        <Link href="/dev-login" className="text-forest-700 font-semibold hover:text-forest-900">
           ログインする →
         </Link>
       </div>
@@ -29,14 +29,17 @@ export default async function MyPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 space-y-10">
+    <div className="mx-auto max-w-3xl px-4 py-10 space-y-10">
       <div>
-        <h1 className="text-2xl font-bold text-emerald-900">マイページ</h1>
+        <h1 className="font-display text-2xl font-semibold text-forest-950">マイページ</h1>
         <p className="text-sm text-stone-600 mt-1">{user.displayName} さん</p>
+        <p className="text-xs text-stone-400 mt-0.5">
+          他の利用者にはあなたの名前ではなく公開ID「<span className="font-medium text-stone-500">{user.handle}</span>」が表示されます。
+        </p>
       </div>
 
       <section>
-        <h2 className="font-semibold text-stone-900 mb-3">自分が投稿した提案</h2>
+        <h2 className="font-display font-semibold text-forest-950 mb-3">自分が投稿した提案</h2>
         {myProposals.length === 0 ? (
           <p className="text-sm text-stone-500">まだ投稿がありません。</p>
         ) : (
@@ -45,7 +48,7 @@ export default async function MyPage() {
               <Link
                 key={p.id}
                 href={`/proposals/${p.id}`}
-                className="block rounded-lg border border-stone-200 bg-white p-3 hover:border-emerald-400"
+                className="block rounded-xl border border-stone-200 bg-white p-4 hover:border-forest-400 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{p.title}</span>
@@ -53,7 +56,7 @@ export default async function MyPage() {
                     {PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}
                   </span>
                 </div>
-                <span className="text-xs text-emerald-700">
+                <span className="text-xs text-forest-700">
                   {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
                 </span>
               </Link>
@@ -63,7 +66,7 @@ export default async function MyPage() {
       </section>
 
       <section>
-        <h2 className="font-semibold text-stone-900 mb-3">署名した提案</h2>
+        <h2 className="font-display font-semibold text-forest-950 mb-3">署名した提案</h2>
         {mySignatures.length === 0 ? (
           <p className="text-sm text-stone-500">まだ署名した提案がありません。</p>
         ) : (
@@ -72,7 +75,7 @@ export default async function MyPage() {
               <Link
                 key={s.id}
                 href={`/proposals/${s.proposal.id}`}
-                className="block rounded-lg border border-stone-200 bg-white p-3 hover:border-emerald-400"
+                className="block rounded-xl border border-stone-200 bg-white p-4 hover:border-forest-400 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{s.proposal.title}</span>
