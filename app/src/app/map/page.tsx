@@ -156,35 +156,6 @@ export default async function MapPage() {
         </div>
       </section>
 
-      {/* --- 地図 --- */}
-      <div className="mx-auto max-w-6xl px-5 py-8">
-        <h2 className="font-display text-xl font-semibold text-forest-950 mb-1">地図で見る</h2>
-        <p className="text-sm text-stone-600 mb-4">ピンをクリックすると詳細を確認できます。</p>
-
-        <ProposalMap
-          proposals={proposals.map((p) => ({
-            id: p.id,
-            title: p.title,
-            lat: p.lat,
-            lng: p.lng,
-            category: p.category,
-            status: p.status,
-          }))}
-        />
-
-        <div className="mt-3 flex flex-wrap gap-3">
-          {PROPOSAL_CATEGORIES.map((c) => (
-            <span key={c} className="inline-flex items-center gap-1.5 text-xs text-stone-600">
-              <span
-                className="inline-block h-3 w-3 rounded-full"
-                style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[c] }}
-              />
-              {PROPOSAL_CATEGORY_ICON[c]} {PROPOSAL_CATEGORY_LABELS[c]}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* --- 実現しました(自動スクロール・ループ) --- */}
       <section id="realized" className="bg-forest-50 border-y border-forest-100 py-8 scroll-mt-4">
         <div className="mx-auto max-w-6xl px-5">
@@ -249,6 +220,32 @@ export default async function MapPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* --- 地図から探す(補助的な閲覧手段。一覧が主) --- */}
+        <section>
+          <h2 className="text-sm font-semibold text-stone-500 mb-2">地図から探す</h2>
+          <ProposalMap
+            proposals={proposals.map((p) => ({
+              id: p.id,
+              title: p.title,
+              lat: p.lat,
+              lng: p.lng,
+              category: p.category,
+              status: p.status,
+            }))}
+          />
+          <div className="mt-3 flex flex-wrap gap-3">
+            {PROPOSAL_CATEGORIES.map((c) => (
+              <span key={c} className="inline-flex items-center gap-1.5 text-xs text-stone-500">
+                <span
+                  className="inline-block h-3 w-3 rounded-full"
+                  style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[c] }}
+                />
+                {PROPOSAL_CATEGORY_ICON[c]} {PROPOSAL_CATEGORY_LABELS[c]}
+              </span>
+            ))}
+          </div>
         </section>
       </div>
     </div>
