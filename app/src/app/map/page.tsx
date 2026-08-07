@@ -63,12 +63,29 @@ function CarouselHeader({ title, moreHref }: { title: string; moreHref: string }
   );
 }
 
+function StatBadge({ icon, value, unit, label }: { icon: string; value: string | number; unit: string; label: string }) {
+  return (
+    <div className="flex items-center gap-4">
+      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-forest-100 text-3xl">
+        {icon}
+      </span>
+      <div>
+        <div className="flex items-baseline gap-1">
+          <span className="font-display text-3xl font-bold text-clay-600">{value}</span>
+          <span className="text-sm font-semibold text-stone-500">{unit}</span>
+        </div>
+        <p className="text-xs text-stone-500 mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
+}
+
 export default async function MapPage() {
   // 「完了」「却下」は決着済みのため、新着/署名が多い順の一覧には出さない
   // (完了は「実現しました」ショーケースに別途表示する)
   const activeFilter = { status: { notIn: ["completed", "rejected"] } };
 
-  const [proposals, bySignatures, byNew, realized] = await Promise.all([
+  const [proposals, bySignatures, byNew, realized, realizedCount, userCount] = await Promise.all([
     prisma.proposal.findMany({ include: { signatures: true } }),
     prisma.proposal.findMany({
       where: activeFilter,
@@ -88,25 +105,61 @@ export default async function MapPage() {
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
+    prisma.proposal.count({ where: { status: "completed" } }),
+    prisma.user.count({ where: { userType: { not: "admin" } } }),
   ]);
+
+  const totalSignatures = proposals.reduce((sum, p) => sum + p.signatures.length, 0);
 
   return (
     <div>
-      <div className="mx-auto max-w-6xl px-5 pt-6 pb-5">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-forest-950">提案マップ</h1>
-            <p className="text-sm text-stone-600 mt-1">
-              公園設備や植樹・緑化の提案から、私有地の樹木管理・伐採支援の要望まで、まちの「みどり」に関する声を集めています。ピンをクリックすると詳細を確認できます。
-            </p>
+      {/* --- ヒーロー --- */}
+      <section className="relative overflow-hidden bg-forest-900">
+        <span className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-forest-800" />
+        <span className="pointer-events-none absolute -right-4 top-20 h-40 w-40 rounded-full bg-forest-700/70" />
+        <span className="pointer-events-none absolute -left-20 bottom-[-4rem] h-56 w-56 rounded-full bg-forest-800" />
+
+        <div className="relative mx-auto max-w-6xl px-5 pt-12 pb-10">
+          <p className="text-clay-400 text-xs font-semibold tracking-widest">GREENVOICE TOKYO</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-white mt-2 leading-tight max-w-xl">
+            まちの「みどり」を、
+            <br />
+            みんなの声でつくる。
+          </h1>
+          <p className="text-forest-200 text-sm mt-4 max-w-lg leading-relaxed">
+            公園設備の要望から植樹・緑化、私有地の樹木管理まで。あなたの声が地図に載り、共感が集まるほど、行政での検討につながります。
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href="/proposals/new"
+              className="rounded-full bg-clay-500 text-white text-sm font-semibold px-6 py-3 hover:bg-clay-600 transition-colors"
+            >
+              + 提案してみる
+            </Link>
+            <a
+              href="#realized"
+              className="rounded-full border border-forest-400 text-forest-100 text-sm font-semibold px-6 py-3 hover:bg-forest-800 transition-colors"
+            >
+              実現した事例を見る
+            </a>
           </div>
-          <Link
-            href="/proposals/new"
-            className="rounded-full bg-clay-500 text-white text-sm font-semibold px-5 py-2.5 hover:bg-clay-600 transition-colors whitespace-nowrap"
-          >
-            + 提案してみる
-          </Link>
         </div>
+      </section>
+
+      {/* --- 数字で見るGreenVoice --- */}
+      <section className="bg-white border-b border-stone-100">
+        <div className="mx-auto max-w-6xl px-5 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
+          <StatBadge icon="📮" value={proposals.length} unit="件" label="投稿された提案" />
+          <StatBadge icon="✍️" value={totalSignatures} unit="筆" label="集まった署名" />
+          <StatBadge icon="🎉" value={realizedCount} unit="件" label="実現した提案" />
+          <StatBadge icon="🧑‍🤝‍🧑" value={userCount} unit="人" label="参加している都民・企業" />
+        </div>
+      </section>
+
+      {/* --- 地図 --- */}
+      <div className="mx-auto max-w-6xl px-5 py-8">
+        <h2 className="font-display text-xl font-semibold text-forest-950 mb-1">地図で見る</h2>
+        <p className="text-sm text-stone-600 mb-4">ピンをクリックすると詳細を確認できます。</p>
 
         <ProposalMap
           proposals={proposals.map((p) => ({
@@ -133,7 +186,7 @@ export default async function MapPage() {
       </div>
 
       {/* --- 実現しました(自動スクロール・ループ) --- */}
-      <section className="bg-forest-50 border-y border-forest-100 py-6">
+      <section id="realized" className="bg-forest-50 border-y border-forest-100 py-8 scroll-mt-4">
         <div className="mx-auto max-w-6xl px-5">
           <p className="text-clay-600 text-xs font-semibold tracking-wide">REALIZED</p>
           <h2 className="font-display text-xl font-semibold text-forest-950 mt-1 mb-4">
@@ -166,7 +219,7 @@ export default async function MapPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-5 py-7 space-y-8">
+      <div className="mx-auto max-w-6xl px-5 py-8 space-y-8">
         {/* --- 署名が多い順 --- */}
         <section>
           <CarouselHeader title="署名が多い提案" moreHref="/proposals?sort=signatures" />

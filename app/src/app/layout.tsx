@@ -31,8 +31,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/map" className="text-forest-100/90 hover:text-white transition-colors">
                 マップ
               </Link>
-              <Link href="/proposals/new" className="text-forest-100/90 hover:text-white transition-colors">
-                提案する
+              <Link
+                href="/proposals/new"
+                className="rounded-full bg-clay-500 text-white px-4 py-1.5 font-semibold hover:bg-clay-600 transition-colors"
+              >
+                + 提案する
               </Link>
               <Link href="/mypage" className="text-forest-100/90 hover:text-white transition-colors">
                 マイページ
