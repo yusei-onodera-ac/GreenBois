@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ProposalMap from "@/components/ProposalMap";
+import AutoScrollCarousel from "@/components/AutoScrollCarousel";
 import {
   PROPOSAL_CATEGORIES,
   PROPOSAL_CATEGORY_LABELS,
@@ -13,11 +14,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const SORT_OPTIONS = [
-  { value: "new", label: "新着順" },
-  { value: "signatures", label: "署名が多い順" },
-] as const;
-
 function daysAgo(date: Date) {
   const diff = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
   if (diff <= 0) return "今日";
@@ -25,68 +21,79 @@ function daysAgo(date: Date) {
   return `${Math.floor(diff / 30)}ヶ月前`;
 }
 
-export default async function MapPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ sort?: string }>;
-}) {
-  const { sort } = await searchParams;
-  const activeSort = sort === "signatures" ? "signatures" : "new";
+type CardProposal = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: string;
+  signatureCount: number;
+};
 
-  const [proposals, realized] = await Promise.all([
+function ProposalCard({ p }: { p: CardProposal }) {
+  return (
+    <Link
+      href={`/proposals/${p.id}`}
+      className="block w-[calc(25%-0.75rem)] min-w-[220px] shrink-0 rounded-xl border border-stone-200 bg-white p-5 hover:border-forest-400 hover:shadow-sm transition-all snap-start"
+    >
+      <div className="flex items-center justify-between text-xs mb-2.5">
+        <span
+          className="rounded-full px-2 py-0.5 font-medium text-white"
+          style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
+        >
+          {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}
+        </span>
+        <span className="text-stone-500">{PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}</span>
+      </div>
+      <h3 className="font-semibold text-stone-900 mb-1.5 line-clamp-2 leading-snug">{p.title}</h3>
+      <p className="text-xs text-stone-500 line-clamp-2">{p.description}</p>
+      <div className="mt-3 text-xs text-stone-500">署名 {p.signatureCount}筆</div>
+    </Link>
+  );
+}
+
+function CarouselHeader({ title, moreHref }: { title: string; moreHref: string }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="font-display text-lg font-semibold text-forest-950">{title}</h2>
+      <Link href={moreHref} className="text-sm text-forest-700 hover:text-forest-900 font-medium transition-colors">
+        もっと見る →
+      </Link>
+    </div>
+  );
+}
+
+export default async function MapPage() {
+  // 「完了」「却下」は決着済みのため、新着/署名が多い順の一覧には出さない
+  // (完了は「実現しました」ショーケースに別途表示する)
+  const activeFilter = { status: { notIn: ["completed", "rejected"] } };
+
+  const [proposals, bySignatures, byNew, realized] = await Promise.all([
+    prisma.proposal.findMany({ include: { signatures: true } }),
     prisma.proposal.findMany({
-      orderBy:
-        activeSort === "signatures"
-          ? [{ signatures: { _count: "desc" } }]
-          : [{ createdAt: "desc" }],
+      where: activeFilter,
+      orderBy: [{ signatures: { _count: "desc" } }],
       include: { signatures: true },
+      take: 8,
+    }),
+    prisma.proposal.findMany({
+      where: activeFilter,
+      orderBy: [{ createdAt: "desc" }],
+      include: { signatures: true },
+      take: 8,
     }),
     prisma.proposal.findMany({
       where: { status: "completed" },
       include: { statusHistory: { orderBy: { changedAt: "desc" }, take: 1 } },
       orderBy: { createdAt: "desc" },
-      take: 6,
+      take: 10,
     }),
   ]);
 
   return (
     <div>
-      {/* --- 実現しました ショーケース --- */}
-      <section className="bg-forest-900">
-        <div className="mx-auto max-w-6xl px-5 py-8">
-          <p className="text-clay-400 text-xs font-semibold tracking-wide">REALIZED</p>
-          <h2 className="font-display text-2xl font-semibold text-white mt-1">
-            このアプリから、実際に実現しました
-          </h2>
-          {realized.length === 0 ? (
-            <p className="text-forest-200 text-sm mt-3 max-w-xl">
-              まだ実現した提案はありません。あなたの一声が、その最初の1件になるかもしれません。
-            </p>
-          ) : (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {realized.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/proposals/${p.id}`}
-                  className="rounded-xl bg-forest-800/60 border border-forest-700 p-4 hover:bg-forest-800 transition-colors"
-                >
-                  <div className="flex items-center gap-1.5 text-clay-400 text-xs font-semibold">
-                    <span>🎉</span> 実現しました
-                  </div>
-                  <h3 className="text-white font-medium mt-1.5 leading-snug">{p.title}</h3>
-                  <p className="text-forest-300 text-xs mt-2">
-                    {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
-                    {p.statusHistory[0] && ` ・ ${daysAgo(p.statusHistory[0].changedAt)}に実現`}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-6xl px-5 py-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="mx-auto max-w-6xl px-5 pt-6 pb-5">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl font-semibold text-forest-950">提案マップ</h1>
             <p className="text-sm text-stone-600 mt-1">
@@ -123,58 +130,73 @@ export default async function MapPage({
             </span>
           ))}
         </div>
+      </div>
 
-        <div className="mt-10 flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold text-forest-950">
-            提案一覧 <span className="text-sm font-sans font-normal text-stone-400">({proposals.length}件)</span>
+      {/* --- 実現しました(自動スクロール・ループ) --- */}
+      <section className="bg-forest-50 border-y border-forest-100 py-6">
+        <div className="mx-auto max-w-6xl px-5">
+          <p className="text-clay-600 text-xs font-semibold tracking-wide">REALIZED</p>
+          <h2 className="font-display text-xl font-semibold text-forest-950 mt-1 mb-4">
+            このアプリから、実際に実現しました
           </h2>
-          <div className="flex gap-1 rounded-full bg-stone-100 p-1 text-xs">
-            {SORT_OPTIONS.map((opt) => (
-              <Link
-                key={opt.value}
-                href={opt.value === "new" ? "/map" : `/map?sort=${opt.value}`}
-                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
-                  activeSort === opt.value
-                    ? "bg-forest-800 text-white"
-                    : "text-stone-500 hover:text-stone-700"
-                }`}
-              >
-                {opt.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {proposals.map((p) => (
-            <Link
-              key={p.id}
-              href={`/proposals/${p.id}`}
-              className="rounded-xl border border-stone-200 bg-white p-4 hover:border-forest-400 hover:shadow-sm transition-all"
-            >
-              <div className="flex items-center justify-between text-xs mb-2">
-                <span
-                  className="rounded-full px-2 py-0.5 font-medium text-white"
-                  style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
+          {realized.length === 0 ? (
+            <p className="text-stone-500 text-sm max-w-xl">
+              まだ実現した提案はありません。あなたの一声が、その最初の1件になるかもしれません。
+            </p>
+          ) : (
+            <AutoScrollCarousel speedSeconds={realized.length * 5}>
+              {realized.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/proposals/${p.id}`}
+                  className="block w-72 rounded-xl bg-white border border-forest-200 border-l-4 border-l-clay-500 p-4 shadow-sm hover:shadow transition-shadow"
                 >
-                  {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}{" "}
-                  {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
-                </span>
-                <span className="text-stone-500">
-                  {PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}
-                </span>
-              </div>
-              <h3 className="font-semibold text-stone-900 mb-1">{p.title}</h3>
-              <p className="text-sm text-stone-600 line-clamp-2">{p.description}</p>
-              <div className="mt-3 text-xs text-stone-500">
-                署名 {p.signatures.length} / {p.signatureTarget} 筆
-              </div>
-            </Link>
-          ))}
-          {proposals.length === 0 && (
-            <p className="text-stone-500 text-sm">まだ提案が投稿されていません。</p>
+                  <div className="flex items-center gap-1.5 text-clay-600 text-xs font-semibold">
+                    <span>🎉</span> 実現しました
+                  </div>
+                  <h3 className="text-forest-950 font-medium mt-1.5 leading-snug line-clamp-2">{p.title}</h3>
+                  <p className="text-stone-500 text-xs mt-2">
+                    {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
+                    {p.statusHistory[0] && ` ・ ${daysAgo(p.statusHistory[0].changedAt)}に実現`}
+                  </p>
+                </Link>
+              ))}
+            </AutoScrollCarousel>
           )}
         </div>
+      </section>
+
+      <div className="mx-auto max-w-6xl px-5 py-7 space-y-8">
+        {/* --- 署名が多い順 --- */}
+        <section>
+          <CarouselHeader title="署名が多い提案" moreHref="/proposals?sort=signatures" />
+          {bySignatures.length === 0 ? (
+            <p className="text-stone-500 text-sm">まだ提案がありません。</p>
+          ) : (
+            <div className="gv-scroll flex gap-4 overflow-x-auto pb-3 snap-x snap-proximity">
+              {bySignatures.map((p) => (
+                <ProposalCard
+                  key={p.id}
+                  p={{ ...p, signatureCount: p.signatures.length }}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* --- 新着順 --- */}
+        <section>
+          <CarouselHeader title="新着の提案" moreHref="/proposals?sort=new" />
+          {byNew.length === 0 ? (
+            <p className="text-stone-500 text-sm">まだ提案がありません。</p>
+          ) : (
+            <div className="gv-scroll flex gap-4 overflow-x-auto pb-3 snap-x snap-proximity">
+              {byNew.map((p) => (
+                <ProposalCard key={p.id} p={{ ...p, signatureCount: p.signatures.length }} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

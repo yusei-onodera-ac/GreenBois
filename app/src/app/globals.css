@@ -67,3 +67,20 @@ body {
 /* 英数字(半角欧文)は14pt(=約18.7px)基準だが、和文と混在する本文では可読性を優先し
    Tailwindユーティリティ(text-sm等)側で個別に調整する。ここではフォントスタックの
    優先順位のみを担保する。 */
+
+/* 横スクロールカルーセル用：スクロールバーを常に見える形で表示し、
+   「スライドできる」ことが一目でわかるようにする */
+.gv-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-forest-300) transparent;
+}
+.gv-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.gv-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.gv-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--color-forest-300);
+  border-radius: 9999px;
+}
