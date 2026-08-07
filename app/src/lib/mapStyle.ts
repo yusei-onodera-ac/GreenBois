@@ -1,17 +1,26 @@
 import type { StyleSpecification } from "maplibre-gl";
 
-// ローカル開発では外部タイルサーバーへの通信がブロックされる/不安定な環境があるため、
-// 外部リクエスト不要の最小構成スタイル(背景色+グリッド線のみ)を使用する。
-// 本番・実証実験フェーズでは国土地理院タイル等の実データソースへの差し替えを検討する
-// (docs/03-external-integration.md, docs/04-architecture.md 参照)。
-export const OFFLINE_MAP_STYLE: StyleSpecification = {
+// 国土地理院(GSI)提供の標準地図タイル。APIキー不要・無償で利用可能
+// (https://maps.gsi.go.jp/development/ichiran.html)。
+// docs/03-external-integration.md / docs/04-architecture.md で本番想定の地図タイルとして
+// 挙げているものと同一で、実際に地名・道路が表示される実データソース。
+export const GSI_MAP_STYLE: StyleSpecification = {
   version: 8,
-  sources: {},
+  sources: {
+    gsi: {
+      type: "raster",
+      tiles: ["https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      minzoom: 2,
+      maxzoom: 18,
+      attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>',
+    },
+  },
   layers: [
     {
-      id: "background",
-      type: "background",
-      paint: { "background-color": "#dcefe3" },
+      id: "gsi-layer",
+      type: "raster",
+      source: "gsi",
     },
   ],
 };

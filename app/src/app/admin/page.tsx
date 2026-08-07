@@ -2,7 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { PROPOSAL_CATEGORY_LABELS, PROPOSAL_STATUS_LABELS, ProposalCategory, ProposalStatus } from "@/lib/enums";
+import {
+  PROPOSAL_CATEGORY_LABELS,
+  PROPOSAL_CATEGORY_ICON,
+  PROPOSAL_STATUS_LABELS,
+  ProposalCategory,
+  ProposalStatus,
+} from "@/lib/enums";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +60,7 @@ export default async function AdminDashboardPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-stone-600">
+                  {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}{" "}
                   {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
                 </td>
                 <td className="px-4 py-3 text-stone-600">

@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ProposalMap from "@/components/ProposalMap";
-import { PROPOSAL_CATEGORY_LABELS, PROPOSAL_STATUS_LABELS, ProposalCategory, ProposalStatus } from "@/lib/enums";
+import {
+  PROPOSAL_CATEGORIES,
+  PROPOSAL_CATEGORY_LABELS,
+  PROPOSAL_CATEGORY_COLOR,
+  PROPOSAL_CATEGORY_ICON,
+  PROPOSAL_STATUS_LABELS,
+  ProposalCategory,
+  ProposalStatus,
+} from "@/lib/enums";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +39,18 @@ export default async function MapPage() {
         }))}
       />
 
+      <div className="mt-3 flex flex-wrap gap-3">
+        {PROPOSAL_CATEGORIES.map((c) => (
+          <span key={c} className="inline-flex items-center gap-1.5 text-xs text-stone-600">
+            <span
+              className="inline-block h-3 w-3 rounded-full"
+              style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[c] }}
+            />
+            {PROPOSAL_CATEGORY_ICON[c]} {PROPOSAL_CATEGORY_LABELS[c]}
+          </span>
+        ))}
+      </div>
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {proposals.map((p) => (
           <Link
@@ -39,7 +59,11 @@ export default async function MapPage() {
             className="rounded-xl border border-stone-200 bg-white p-4 hover:border-emerald-400 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between text-xs mb-2">
-              <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 font-medium">
+              <span
+                className="rounded-full px-2 py-0.5 font-medium text-white"
+                style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
+              >
+                {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}{" "}
                 {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
               </span>
               <span className="text-stone-500">

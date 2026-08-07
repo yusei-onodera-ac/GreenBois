@@ -46,7 +46,7 @@ async function main() {
   const p1 = await prisma.proposal.create({
     data: {
       userId: citizenA.id,
-      category: "shade",
+      category: "park_facility",
       title: "太子堂公園に日よけ付きベンチを設置してほしい",
       description:
         "夏場、子どもを遊ばせている間に休める日陰がありません。日よけ付きベンチの設置を希望します。",
@@ -64,7 +64,7 @@ async function main() {
   const p2 = await prisma.proposal.create({
     data: {
       userId: citizenB.id,
-      category: "bench",
+      category: "park_facility",
       title: "駒沢通り沿いの街路にベンチを増設したい",
       description: "高齢者の休憩スポットが少なく、長い距離を歩けない方が困っています。",
       lat: 35.6321,
@@ -102,6 +102,23 @@ async function main() {
     data: { proposalId: p3.id, minimumYears: 5 },
   });
 
+  const p4 = await prisma.proposal.create({
+    data: {
+      userId: citizenA.id,
+      category: "greening",
+      title: "世田谷通り沿いに街路樹を増やしてほしい",
+      description: "夏場の照り返しが強く、緑陰道路にしてヒートアイランド対策をしてほしい。",
+      lat: 35.6402,
+      lng: 139.6631,
+      landType: "public_ward",
+      status: "collecting",
+      signatureTarget: 50,
+    },
+  });
+  await prisma.statusHistory.create({
+    data: { proposalId: p4.id, toStatus: "collecting", changedByUserId: citizenA.id },
+  });
+
   // 署名データ(p2はしきい値に近い数を仮投入)
   const signers = [citizenA, citizenB, corporate];
   for (const signer of signers) {
@@ -118,7 +135,7 @@ async function main() {
     unknown: "未判定(手動割り当て待ち)",
   };
 
-  for (const p of [p1, p2, p3]) {
+  for (const p of [p1, p2, p3, p4]) {
     await prisma.jurisdiction.create({
       data: {
         proposalId: p.id,
@@ -145,7 +162,7 @@ async function main() {
     });
   }
 
-  console.log("Seed completed:", { p1: p1.id, p2: p2.id, p3: p3.id, admin: admin.id });
+  console.log("Seed completed:", { p1: p1.id, p2: p2.id, p3: p3.id, p4: p4.id, admin: admin.id });
 }
 
 main()

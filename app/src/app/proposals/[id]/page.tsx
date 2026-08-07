@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { signProposal } from "./actions";
 import {
   PROPOSAL_CATEGORY_LABELS,
+  PROPOSAL_CATEGORY_COLOR,
+  PROPOSAL_CATEGORY_ICON,
   PROPOSAL_STATUS_LABELS,
   LAND_TYPE_LABELS,
   ProposalCategory,
@@ -50,7 +52,11 @@ export default async function ProposalDetailPage({
       </Link>
 
       <div className="mt-4 flex items-center gap-2 text-xs">
-        <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 font-medium">
+        <span
+          className="rounded-full px-2 py-0.5 font-medium text-white"
+          style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[proposal.category as ProposalCategory] ?? "#6b7280" }}
+        >
+          {PROPOSAL_CATEGORY_ICON[proposal.category as ProposalCategory] ?? "📍"}{" "}
           {PROPOSAL_CATEGORY_LABELS[proposal.category as ProposalCategory] ?? proposal.category}
         </span>
         <span className="rounded-full bg-stone-100 text-stone-700 px-2 py-0.5 font-medium">

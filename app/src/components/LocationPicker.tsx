@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Map as MaplibreMap, Marker, NavigationControl, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { OFFLINE_MAP_STYLE } from "@/lib/mapStyle";
+import { GSI_MAP_STYLE } from "@/lib/mapStyle";
 
 const DEFAULT_CENTER: [number, number] = [139.6688, 35.6438];
 
@@ -28,7 +28,7 @@ export default function LocationPicker({
 
     const map = new MaplibreMap({
       container: containerRef.current,
-      style: OFFLINE_MAP_STYLE,
+      style: GSI_MAP_STYLE,
       center: [value.lng || DEFAULT_CENTER[0], value.lat || DEFAULT_CENTER[1]],
       zoom: 14,
     });

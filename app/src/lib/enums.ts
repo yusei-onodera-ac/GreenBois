@@ -5,21 +5,37 @@
 export const USER_TYPES = ["citizen", "corporate", "admin"] as const;
 export type UserType = (typeof USER_TYPES)[number];
 
+// 「種類が細かすぎる/重複している」というフィードバックを受け、原案(docs/00-concept.md)の
+// 2大提案類型(公園設備要望 / 私有地緑化)を軸に4分類へ整理
+// (旧: bench/shade/planting/private_greening/other → 新: park_facility/greening/private_greening/other)。
 export const PROPOSAL_CATEGORIES = [
-  "bench",
-  "shade",
-  "planting",
+  "park_facility",
+  "greening",
   "private_greening",
   "other",
 ] as const;
 export type ProposalCategory = (typeof PROPOSAL_CATEGORIES)[number];
 
 export const PROPOSAL_CATEGORY_LABELS: Record<ProposalCategory, string> = {
-  bench: "ベンチ設置",
-  shade: "日よけ設置",
-  planting: "植樹・緑化",
+  park_facility: "公園設備(ベンチ・日よけ等)",
+  greening: "植樹・緑化(公有地)",
   private_greening: "私有地緑化",
   other: "その他",
+};
+
+// 地図ピンの色・アイコン(ジャンルごとに視覚的に区別するため)
+export const PROPOSAL_CATEGORY_COLOR: Record<ProposalCategory, string> = {
+  park_facility: "#2563eb", // 青
+  greening: "#059669", // 緑
+  private_greening: "#c026d3", // 紫(企業・私有地を区別)
+  other: "#6b7280", // グレー
+};
+
+export const PROPOSAL_CATEGORY_ICON: Record<ProposalCategory, string> = {
+  park_facility: "🪑",
+  greening: "🌳",
+  private_greening: "🏢",
+  other: "📍",
 };
 
 export const LAND_TYPES = ["public_metro", "public_ward", "private", "unknown"] as const;
