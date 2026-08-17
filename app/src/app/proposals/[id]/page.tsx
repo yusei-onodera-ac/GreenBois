@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { signProposal } from "./actions";
+import ProposalThumb from "@/components/ProposalThumb";
 import {
   PROPOSAL_CATEGORY_LABELS,
   PROPOSAL_CATEGORY_COLOR,
@@ -31,6 +32,7 @@ export default async function ProposalDetailPage({
         signatures: { include: { user: true }, orderBy: { signedAt: "desc" } },
         jurisdiction: true,
         statusHistory: { include: { changedByUser: true }, orderBy: { changedAt: "asc" } },
+        attachments: { take: 1 },
       },
     }),
     getCurrentUser(),
@@ -39,10 +41,6 @@ export default async function ProposalDetailPage({
   if (!proposal) notFound();
 
   const alreadySigned = user ? proposal.signatures.some((s) => s.userId === user.id) : false;
-  const progress = Math.min(
-    Math.round((proposal.signatures.length / proposal.signatureTarget) * 100),
-    100
-  );
   const categoryColor = PROPOSAL_CATEGORY_COLOR[proposal.category as ProposalCategory] ?? "#6b7280";
 
   return (
@@ -50,6 +48,12 @@ export default async function ProposalDetailPage({
       <Link href="/map" className="text-sm text-forest-700 hover:text-forest-900 transition-colors">
         ← マップに戻る
       </Link>
+
+      <ProposalThumb
+        photoUrl={proposal.attachments[0]?.url}
+        category={proposal.category}
+        className="mt-4 h-56 w-full rounded-2xl"
+      />
 
       <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
         <span
@@ -82,18 +86,9 @@ export default async function ProposalDetailPage({
       )}
 
       <div className="mt-8 rounded-2xl border border-forest-200 bg-forest-50 p-6">
-        <div className="flex items-baseline justify-between mb-2">
-          <span className="font-semibold text-forest-900">
-            署名 {proposal.signatures.length} / {proposal.signatureTarget} 筆
-          </span>
-          <span className="text-sm text-forest-700">{progress}%</span>
-        </div>
-        <div className="w-full h-2 rounded-full bg-forest-200 overflow-hidden">
-          <div
-            className="h-full bg-forest-600 rounded-full transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <span className="font-semibold text-forest-900 text-lg">
+          署名 {proposal.signatures.length}筆
+        </span>
 
         {alreadySigned ? (
           <p className="mt-4 text-sm text-forest-800 font-medium">✅ あなたはすでに署名しています</p>

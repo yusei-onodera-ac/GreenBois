@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import ProposalThumb from "@/components/ProposalThumb";
 import {
   PROPOSAL_CATEGORY_LABELS,
   PROPOSAL_CATEGORY_COLOR,
@@ -29,10 +30,12 @@ export default async function ProposalListPage({
   const { sort } = await searchParams;
   const activeSort = sort === "signatures" ? "signatures" : "new";
 
+  // マップ画面の各カルーセルと同じ範囲(完了・却下は除く)にそろえる
   const proposals = await prisma.proposal.findMany({
+    where: { status: { notIn: ["completed", "rejected"] } },
     orderBy:
       activeSort === "signatures" ? [{ signatures: { _count: "desc" } }] : [{ createdAt: "desc" }],
-    include: { signatures: true },
+    include: { signatures: true, attachments: { take: 1 } },
   });
 
   return (
@@ -66,24 +69,25 @@ export default async function ProposalListPage({
           <Link
             key={p.id}
             href={`/proposals/${p.id}`}
-            className="rounded-xl border border-stone-200 bg-white p-4 hover:border-forest-400 hover:shadow-sm transition-all"
+            className="overflow-hidden rounded-xl border border-stone-200 bg-white hover:border-forest-400 hover:shadow-sm transition-all"
           >
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span
-                className="rounded-full px-2 py-0.5 font-medium text-white"
-                style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
-              >
-                {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}{" "}
-                {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
-              </span>
-              <span className="text-stone-500">
-                {PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}
-              </span>
-            </div>
-            <h3 className="font-semibold text-stone-900 mb-1">{p.title}</h3>
-            <p className="text-sm text-stone-600 line-clamp-2">{p.description}</p>
-            <div className="mt-3 text-xs text-stone-500">
-              署名 {p.signatures.length} / {p.signatureTarget} 筆
+            <ProposalThumb photoUrl={p.attachments[0]?.url} category={p.category} className="h-36 w-full" />
+            <div className="p-4">
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span
+                  className="rounded-full px-2 py-0.5 font-medium text-white"
+                  style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
+                >
+                  {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}{" "}
+                  {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
+                </span>
+                <span className="text-stone-500">
+                  {PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}
+                </span>
+              </div>
+              <h3 className="font-semibold text-stone-900 mb-1">{p.title}</h3>
+              <p className="text-sm text-stone-600 line-clamp-2">{p.description}</p>
+              <div className="mt-3 text-xs text-stone-500">署名 {p.signatures.length}筆</div>
             </div>
           </Link>
         ))}

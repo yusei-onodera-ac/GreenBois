@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ProposalMap from "@/components/ProposalMap";
 import AutoScrollCarousel from "@/components/AutoScrollCarousel";
+import ProposalThumb from "@/components/ProposalThumb";
 import {
   PROPOSAL_CATEGORIES,
   PROPOSAL_CATEGORY_LABELS,
@@ -28,26 +29,30 @@ type CardProposal = {
   category: string;
   status: string;
   signatureCount: number;
+  photoUrl?: string | null;
 };
 
 function ProposalCard({ p }: { p: CardProposal }) {
   return (
     <Link
       href={`/proposals/${p.id}`}
-      className="block w-[calc(25%-0.75rem)] min-w-[220px] shrink-0 rounded-xl border border-stone-200 bg-white p-5 hover:border-forest-400 hover:shadow-sm transition-all snap-start"
+      className="block w-[calc(25%-0.75rem)] min-w-[220px] shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white hover:border-forest-400 hover:shadow-sm transition-all snap-start"
     >
-      <div className="flex items-center justify-between text-xs mb-2.5">
-        <span
-          className="rounded-full px-2 py-0.5 font-medium text-white"
-          style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
-        >
-          {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}
-        </span>
-        <span className="text-stone-500">{PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}</span>
+      <ProposalThumb photoUrl={p.photoUrl} category={p.category} className="h-32 w-full" />
+      <div className="p-5">
+        <div className="flex items-center justify-between text-xs mb-2.5">
+          <span
+            className="rounded-full px-2 py-0.5 font-medium text-white"
+            style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
+          >
+            {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}
+          </span>
+          <span className="text-stone-500">{PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}</span>
+        </div>
+        <h3 className="font-semibold text-stone-900 mb-1.5 line-clamp-2 leading-snug">{p.title}</h3>
+        <p className="text-xs text-stone-500 line-clamp-2">{p.description}</p>
+        <div className="mt-3 text-xs text-stone-500">署名 {p.signatureCount}筆</div>
       </div>
-      <h3 className="font-semibold text-stone-900 mb-1.5 line-clamp-2 leading-snug">{p.title}</h3>
-      <p className="text-xs text-stone-500 line-clamp-2">{p.description}</p>
-      <div className="mt-3 text-xs text-stone-500">署名 {p.signatureCount}筆</div>
     </Link>
   );
 }
@@ -90,18 +95,21 @@ export default async function MapPage() {
     prisma.proposal.findMany({
       where: activeFilter,
       orderBy: [{ signatures: { _count: "desc" } }],
-      include: { signatures: true },
+      include: { signatures: true, attachments: { take: 1 } },
       take: 8,
     }),
     prisma.proposal.findMany({
       where: activeFilter,
       orderBy: [{ createdAt: "desc" }],
-      include: { signatures: true },
+      include: { signatures: true, attachments: { take: 1 } },
       take: 8,
     }),
     prisma.proposal.findMany({
       where: { status: "completed" },
-      include: { statusHistory: { orderBy: { changedAt: "desc" }, take: 1 } },
+      include: {
+        statusHistory: { orderBy: { changedAt: "desc" }, take: 1 },
+        attachments: { take: 1 },
+      },
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
@@ -173,16 +181,19 @@ export default async function MapPage() {
                 <Link
                   key={p.id}
                   href={`/proposals/${p.id}`}
-                  className="block w-72 rounded-xl bg-white border border-forest-200 border-l-4 border-l-clay-500 p-4 shadow-sm hover:shadow transition-shadow"
+                  className="block w-72 overflow-hidden rounded-xl bg-white border border-forest-200 shadow-sm hover:shadow transition-shadow"
                 >
-                  <div className="flex items-center gap-1.5 text-clay-600 text-xs font-semibold">
-                    <span>🎉</span> 実現しました
+                  <ProposalThumb photoUrl={p.attachments[0]?.url} category={p.category} className="h-32 w-full" />
+                  <div className="border-l-4 border-l-clay-500 p-4">
+                    <div className="flex items-center gap-1.5 text-clay-600 text-xs font-semibold">
+                      <span>🎉</span> 実現しました
+                    </div>
+                    <h3 className="text-forest-950 font-medium mt-1.5 leading-snug line-clamp-2">{p.title}</h3>
+                    <p className="text-stone-500 text-xs mt-2">
+                      {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
+                      {p.statusHistory[0] && ` ・ ${daysAgo(p.statusHistory[0].changedAt)}に実現`}
+                    </p>
                   </div>
-                  <h3 className="text-forest-950 font-medium mt-1.5 leading-snug line-clamp-2">{p.title}</h3>
-                  <p className="text-stone-500 text-xs mt-2">
-                    {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
-                    {p.statusHistory[0] && ` ・ ${daysAgo(p.statusHistory[0].changedAt)}に実現`}
-                  </p>
                 </Link>
               ))}
             </AutoScrollCarousel>
@@ -201,7 +212,7 @@ export default async function MapPage() {
               {bySignatures.map((p) => (
                 <ProposalCard
                   key={p.id}
-                  p={{ ...p, signatureCount: p.signatures.length }}
+                  p={{ ...p, signatureCount: p.signatures.length, photoUrl: p.attachments[0]?.url }}
                 />
               ))}
             </div>
@@ -216,7 +227,10 @@ export default async function MapPage() {
           ) : (
             <div className="gv-scroll flex gap-4 overflow-x-auto pb-3 snap-x snap-proximity">
               {byNew.map((p) => (
-                <ProposalCard key={p.id} p={{ ...p, signatureCount: p.signatures.length }} />
+                <ProposalCard
+                  key={p.id}
+                  p={{ ...p, signatureCount: p.signatures.length, photoUrl: p.attachments[0]?.url }}
+                />
               ))}
             </div>
           )}

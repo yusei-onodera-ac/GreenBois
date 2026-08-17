@@ -43,3 +43,7 @@ next-env.d.ts
 # prisma (SQLiteのローカルDBファイル本体は除外。migrations/schemaはコミットする)
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# ユーザーがアップロードした写真本体はコミットしない(フォルダ構造のみ保持)
+/public/uploads/*
+!/public/uploads/.gitkeep

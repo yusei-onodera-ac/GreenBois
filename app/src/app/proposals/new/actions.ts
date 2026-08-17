@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { determineJurisdiction } from "@/lib/jurisdiction";
 import { recalculateScore } from "@/lib/scoring";
+import { savePhotoUpload } from "@/lib/uploadPhoto";
 import { LandType, ProposalCategory } from "@/lib/enums";
 
 export async function createProposal(formData: FormData) {
@@ -48,6 +49,16 @@ export async function createProposal(formData: FormData) {
   await prisma.statusHistory.create({
     data: { proposalId: proposal.id, toStatus: "collecting", changedByUserId: user.id },
   });
+
+  const photo = formData.get("photo");
+  if (photo instanceof File && photo.size > 0) {
+    const url = await savePhotoUpload(photo);
+    if (url) {
+      await prisma.attachment.create({
+        data: { proposalId: proposal.id, type: "photo_before", url },
+      });
+    }
+  }
 
   await recalculateScore(proposal.id);
 

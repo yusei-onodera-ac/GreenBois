@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createProposal } from "./actions";
 import LocationPicker from "@/components/LocationPicker";
 import {
@@ -18,6 +18,8 @@ const DEFAULT_POS = { lat: 35.6438, lng: 139.6688 };
 export default function NewProposalPage() {
   const [pos, setPos] = useState(DEFAULT_POS);
   const [category, setCategory] = useState<ProposalCategory>("park_facility");
+  const [preview, setPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -79,6 +81,48 @@ export default function NewProposalPage() {
             placeholder="なんでそう思ったか、どんなふうになったら嬉しいか、思いつくままにどうぞ"
             className="w-full rounded-xl border border-stone-300 px-4 py-3 focus:border-forest-500 focus:outline-none focus:ring-2 focus:ring-forest-100"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-stone-700">
+            写真 <span className="font-normal text-stone-400">(あれば。あとから追加はできません)</span>
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            name="photo"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              setPreview(file ? URL.createObjectURL(file) : null);
+            }}
+          />
+          {preview ? (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview} alt="" className="w-full h-48 object-cover rounded-xl border border-stone-200" />
+              <button
+                type="button"
+                onClick={() => {
+                  setPreview(null);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+                className="absolute top-2 right-2 rounded-full bg-black/60 text-white text-xs px-2 py-1"
+              >
+                削除
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-1 w-full h-32 rounded-xl border-2 border-dashed border-stone-300 text-stone-400 text-sm hover:border-forest-400 hover:text-forest-500 transition-colors"
+            >
+              <span className="text-2xl">📷</span>
+              写真を選ぶ
+            </button>
+          )}
         </div>
 
         <div>

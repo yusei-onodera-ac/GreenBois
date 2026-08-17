@@ -76,7 +76,16 @@ async function main() {
     signatureTarget: number;
     signerCount: 0 | 1 | 2 | 3;
     daysAgo: number; // 投稿からの経過日数(新着順の並び用)
+    photoKeywords: string; // LoremFlickr(無償のフリー素材風プレースホルダー画像サービス)検索キーワード
   };
+
+  // LoremFlickr: キーワードに基づくフリー画像プレースホルダーサービス。
+  // lock番号を固定することで、同じ提案には毎回同じ画像が表示されるようにする。
+  let photoLock = 0;
+  function photoUrl(keywords: string): string {
+    photoLock += 1;
+    return `https://loremflickr.com/480/320/${encodeURIComponent(keywords)}?lock=${photoLock}`;
+  }
 
   const specs: Spec[] = [
     // --- 公園設備 ---
@@ -85,35 +94,35 @@ async function main() {
       title: "太子堂公園に日よけ付きベンチを設置してほしい",
       description: "夏場、子どもを遊ばせている間に休める日陰がありません。日よけ付きベンチの設置を希望します。",
       lat: 35.6438, lng: 139.6688, landType: "public_ward", status: "collecting",
-      signatureTarget: 50, signerCount: 3, daysAgo: 3,
+      signatureTarget: 50, signerCount: 3, daysAgo: 3, photoKeywords: "park,bench,shade",
     },
     {
       userIdx: 1, category: "park_facility",
       title: "駒沢通り沿いの街路にベンチを増設したい",
       description: "高齢者の休憩スポットが少なく、長い距離を歩けない方が困っています。",
       lat: 35.6321, lng: 139.6654, landType: "public_ward", status: "screening",
-      signatureTarget: 50, signerCount: 1, daysAgo: 12,
+      signatureTarget: 50, signerCount: 1, daysAgo: 12, photoKeywords: "street,bench,sidewalk",
     },
     {
       userIdx: 0, category: "park_facility",
       title: "駒場公園にドッグランを作ってほしい",
       description: "リード無しで遊ばせられる場所が近隣になく、飼い主同士のトラブルも起きています。",
       lat: 35.6584, lng: 139.6816, landType: "public_metro", status: "collecting",
-      signatureTarget: 50, signerCount: 2, daysAgo: 1,
+      signatureTarget: 50, signerCount: 2, daysAgo: 1, photoKeywords: "dog,park,grass",
     },
     {
       userIdx: 1, category: "park_facility",
       title: "笹塚駅前広場に雨よけ屋根を設置してほしい",
       description: "待ち合わせ場所として使われているが、雨の日に濡れてしまう人が多いです。",
       lat: 35.6763, lng: 139.6683, landType: "public_ward", status: "collecting",
-      signatureTarget: 50, signerCount: 0, daysAgo: 0,
+      signatureTarget: 50, signerCount: 0, daysAgo: 0, photoKeywords: "plaza,station,roof",
     },
     {
       userIdx: 0, category: "park_facility",
       title: "中野中央公園の遊具を最新のものに更新してほしい",
       description: "老朽化した遊具があり、安全面が心配です。",
       lat: 35.7075, lng: 139.6638, landType: "public_ward", status: "rejected",
-      signatureTarget: 50, signerCount: 1, daysAgo: 45,
+      signatureTarget: 50, signerCount: 1, daysAgo: 45, photoKeywords: "playground,park",
     },
 
     // --- 植樹・緑化(公有地) ---
@@ -122,28 +131,28 @@ async function main() {
       title: "世田谷通り沿いに街路樹を増やしてほしい",
       description: "夏場の照り返しが強く、緑陰道路にしてヒートアイランド対策をしてほしい。",
       lat: 35.6402, lng: 139.6631, landType: "public_ward", status: "collecting",
-      signatureTarget: 50, signerCount: 0, daysAgo: 2,
+      signatureTarget: 50, signerCount: 0, daysAgo: 2, photoKeywords: "street,trees,avenue",
     },
     {
       userIdx: 1, category: "greening",
       title: "目黒川沿いの遊歩道に植栽を増やしてほしい",
       description: "桜以外の季節にも緑を楽しめるよう、常緑樹や草花の植栽を増やしてほしいです。",
       lat: 35.6414, lng: 139.6983, landType: "public_metro", status: "adopted",
-      signatureTarget: 50, signerCount: 2, daysAgo: 20,
+      signatureTarget: 50, signerCount: 2, daysAgo: 20, photoKeywords: "river,promenade,trees",
     },
     {
       userIdx: 0, category: "greening",
       title: "淡島通り沿いの中央分離帯を緑化してほしい",
       description: "殺風景な中央分離帯に低木を植え、地域の景観を良くしたいです。",
       lat: 35.6552, lng: 139.6667, landType: "public_ward", status: "collecting",
-      signatureTarget: 50, signerCount: 1, daysAgo: 6,
+      signatureTarget: 50, signerCount: 1, daysAgo: 6, photoKeywords: "hedge,road,shrub",
     },
     {
       userIdx: 1, category: "greening",
       title: "松陰神社通り商店街に緑のプランターを設置したい",
       description: "商店街全体を緑化し、街歩きが楽しくなる通りにしたいという声が地元で出ています。",
       lat: 35.6469, lng: 139.6716, landType: "public_ward", status: "collecting",
-      signatureTarget: 50, signerCount: 3, daysAgo: 8,
+      signatureTarget: 50, signerCount: 3, daysAgo: 8, photoKeywords: "flower,planter,street",
     },
 
     // --- 私有地緑化 ---
@@ -152,7 +161,7 @@ async function main() {
       title: "自社ビル屋上・敷地緑化によるCSR活動",
       description: "三軒茶屋の自社ビル屋上および敷地の一部を緑化し、地域の緑化貢献としたい。緑地協定の締結にも協力可能。",
       lat: 35.6435, lng: 139.6698, landType: "private", status: "collecting",
-      signatureTarget: 300, signerCount: 0, daysAgo: 4,
+      signatureTarget: 300, signerCount: 0, daysAgo: 4, photoKeywords: "rooftop,garden,building",
       hasGreenAgreement: true,
     } as Spec & { hasGreenAgreement: boolean },
     {
@@ -160,7 +169,7 @@ async function main() {
       title: "下北沢の商業ビル壁面を緑化したい",
       description: "ESG活動の一環として壁面緑化を検討しており、近隣理解のためのエビデンスとして署名を集めたい。",
       lat: 35.6613, lng: 139.6683, landType: "private", status: "screening",
-      signatureTarget: 300, signerCount: 3, daysAgo: 25,
+      signatureTarget: 300, signerCount: 3, daysAgo: 25, photoKeywords: "greenwall,facade,building",
       hasGreenAgreement: true,
     } as Spec & { hasGreenAgreement: boolean },
     {
@@ -168,7 +177,7 @@ async function main() {
       title: "近所の空き地オーナーに市民農園化を提案したい",
       description: "長年放置されている空き地があり、地域住民で緑化・活用できないか相談したいです。",
       lat: 35.6361, lng: 139.6559, landType: "private", status: "collecting",
-      signatureTarget: 300, signerCount: 1, daysAgo: 5,
+      signatureTarget: 300, signerCount: 1, daysAgo: 5, photoKeywords: "vacant,lot,garden",
     },
 
     // --- 樹木管理(伐採・剪定支援) ---
@@ -177,28 +186,28 @@ async function main() {
       title: "自宅の大木が傾いていて危険、伐採費用の助成を受けたい",
       description: "台風で自宅敷地の大木が傾いてしまい、倒木の危険があります。伐採費用が高額なため助成制度があれば利用したいです。",
       lat: 35.6389, lng: 139.6602, landType: "private", status: "collecting",
-      signatureTarget: 30, signerCount: 0, daysAgo: 1,
+      signatureTarget: 30, signerCount: 0, daysAgo: 1, photoKeywords: "fallen,tree,storm",
     },
     {
       userIdx: 0, category: "tree_care",
       title: "隣接する空き家の庭木が越境していて剪定してほしい",
       description: "空き家の庭木が生い茂り、道路や隣地にはみ出して通行の妨げになっています。",
       lat: 35.6297, lng: 139.6612, landType: "private", status: "collecting",
-      signatureTarget: 30, signerCount: 2, daysAgo: 3,
+      signatureTarget: 30, signerCount: 2, daysAgo: 3, photoKeywords: "overgrown,tree,garden",
     },
     {
       userIdx: 1, category: "tree_care",
       title: "公園の枯れ木が放置されていて危険なので伐採してほしい",
       description: "台風以降、枯れて倒れかけている木があり、子どもたちが近づくと危険です。",
       lat: 35.6478, lng: 139.6607, landType: "public_ward", status: "adopted",
-      signatureTarget: 30, signerCount: 3, daysAgo: 40,
+      signatureTarget: 30, signerCount: 3, daysAgo: 40, photoKeywords: "dead,tree,forest",
     },
     {
       userIdx: 0, category: "tree_care",
       title: "老木の樹木診断・保全費用を助成してほしい",
       description: "地域のシンボルになっている大木ですが老朽化が進んでおり、専門家による診断費用の助成を希望します。",
       lat: 35.6521, lng: 139.6543, landType: "private", status: "in_progress",
-      signatureTarget: 30, signerCount: 2, daysAgo: 35,
+      signatureTarget: 30, signerCount: 2, daysAgo: 35, photoKeywords: "old,tree,giant",
     },
 
     // --- その他 ---
@@ -207,14 +216,14 @@ async function main() {
       title: "地域の緑化活動ボランティアを募集する仕組みがほしい",
       description: "植樹イベント等のボランティアを募集する窓口が分散していてわかりにくいです。",
       lat: 35.6455, lng: 139.6725, landType: "unknown", status: "collecting",
-      signatureTarget: 50, signerCount: 1, daysAgo: 7,
+      signatureTarget: 50, signerCount: 1, daysAgo: 7, photoKeywords: "volunteer,planting,community",
     },
     {
       userIdx: 0, category: "other",
       title: "緑化に関する相談窓口をオンラインでも受け付けてほしい",
       description: "平日日中しか相談できず、働いている住民には利用しづらいです。",
       lat: 35.6350, lng: 139.6800, landType: "unknown", status: "collecting",
-      signatureTarget: 50, signerCount: 0, daysAgo: 2,
+      signatureTarget: 50, signerCount: 0, daysAgo: 2, photoKeywords: "office,plants,consultation",
     },
   ];
 
@@ -225,18 +234,21 @@ async function main() {
       title: "三宿公園にベンチ3脚を新設",
       description: "近隣住民からの署名をきっかけに、区の緑化予算で公園ベンチが新設されました。",
       lat: 35.6491, lng: 139.6748, landType: "public_ward", signatureTarget: 50, completedDaysAgo: 5,
+      photoKeywords: "park,bench,new",
     },
     {
       userIdx: 0 as const, category: "greening",
       title: "赤堤通りの街路樹植栽が完了",
       description: "住民要望から半年、赤堤通りに新しい街路樹が植えられ、夏の日陰が増えました。",
       lat: 35.6553, lng: 139.6459, landType: "public_ward", signatureTarget: 50, completedDaysAgo: 18,
+      photoKeywords: "street,trees,sunny",
     },
     {
       userIdx: 2 as const, category: "private_greening",
       title: "経堂のオフィスビル屋上緑化が完成",
       description: "企業のCSR活動として提案・実施された屋上緑化。地域の憩いスペースとしても開放されています。",
       lat: 35.6598, lng: 139.6435, landType: "private", signatureTarget: 300, completedDaysAgo: 60,
+      photoKeywords: "rooftop,garden,office",
     },
   ];
 
@@ -288,6 +300,10 @@ async function main() {
       await prisma.greenAgreement.create({ data: { proposalId: proposal.id, minimumYears: 5 } });
     }
 
+    await prisma.attachment.create({
+      data: { proposalId: proposal.id, type: "photo_before", url: photoUrl(s.photoKeywords) },
+    });
+
     return proposal;
   }
 
@@ -331,6 +347,9 @@ async function main() {
     for (const u of users) {
       await prisma.signature.create({ data: { proposalId: proposal.id, userId: u.id } }).catch(() => {});
     }
+    await prisma.attachment.create({
+      data: { proposalId: proposal.id, type: "photo_after", url: photoUrl(cs.photoKeywords) },
+    });
     createdProposals.push(proposal);
   }
 
