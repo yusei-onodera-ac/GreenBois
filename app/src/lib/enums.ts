@@ -3,7 +3,7 @@
 // リテラル型定義で型安全性を担保する(docs/02-data-model.md 準拠)。
 
 // 都民のみが利用できるサービス(私有地・企業敷地への行政補助金交付は法的に不可能なため、
-// 企業アカウントは設けない。企業の関わり方は docs/07-impact-and-policy.md 3.2/3.4節参照)。
+// 企業アカウントは設けない(docs/00-concept.md参照)。
 export const USER_TYPES = ["citizen", "admin"] as const;
 export type UserType = (typeof USER_TYPES)[number];
 
@@ -21,21 +21,31 @@ export const PROPOSAL_CATEGORIES = [
 ] as const;
 export type ProposalCategory = (typeof PROPOSAL_CATEGORIES)[number];
 
+// 新規提案は公有地(公園等)に限定するため、私有地緑化は選択肢から外す
+// (既存の私有地提案データは行政ダッシュボード等に残したまま、新規作成・都民向けの
+// 絞り込み/凡例からは外す。src/app/(citizen)/proposals/new/NewProposalForm.tsx、
+// map/proposals一覧ページの凡例・絞り込みチップで共通して使う)。
+export const CREATABLE_CATEGORIES = PROPOSAL_CATEGORIES.filter(
+  (c): c is Exclude<ProposalCategory, "private_greening"> => c !== "private_greening"
+);
+
+// カテゴリ名は簡潔に(括弧書きの説明は省く。詳細はアイコン+投稿内容で伝える)。
 export const PROPOSAL_CATEGORY_LABELS: Record<ProposalCategory, string> = {
-  park_facility: "公園設備(ベンチ・日よけ等)",
-  greening: "植樹・緑化(公有地)",
+  park_facility: "公園設備",
+  greening: "植樹・緑化",
   private_greening: "私有地緑化",
-  tree_care: "樹木管理(伐採・剪定支援)",
+  tree_care: "樹木管理",
   other: "その他",
 };
 
-// 地図ピンの色・アイコン(ジャンルごとに視覚的に区別するため)
+// カテゴリの色は使わず、ブランドカラーの緑に統一する
+// (カテゴリの区別はsrc/components/CategoryIcon.tsxのアイコン形状で行う)。
 export const PROPOSAL_CATEGORY_COLOR: Record<ProposalCategory, string> = {
-  park_facility: "#2563eb", // 青
-  greening: "#059669", // 緑
-  private_greening: "#c026d3", // 紫(企業・私有地を区別)
-  tree_care: "#b45309", // 茶(伐採・管理=木そのものを扱うイメージ)
-  other: "#6b7280", // グレー
+  park_facility: "#2f8f39",
+  greening: "#2f8f39",
+  private_greening: "#2f8f39",
+  tree_care: "#2f8f39",
+  other: "#2f8f39",
 };
 
 // カテゴリごとのアイコンは src/components/CategoryIcon.tsx(SVG)を使う。

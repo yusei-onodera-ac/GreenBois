@@ -1,141 +1,67 @@
-# 02. データモデル — GreenVoice TOKYO
+# 02. データモデル
 
-前提：[01-requirements.md](./01-requirements.md) の機能要件（F1〜F10）を満たすためのデータ構造。実装時のDB選定は [04-architecture.md](./04-architecture.md) を参照。
+Prismaスキーマは `app/prisma/schema.prisma`。ローカル開発はSQLite(`app/prisma/dev.db`、gitignore対象)。SQLiteはネイティブenumを持たないため、enum相当の値は`String`型カラム+`app/src/lib/enums.ts`のリテラル型で型安全性を担保している。
 
-## 1. ER図（概念モデル）
+## ER図(概略)
 
 ```mermaid
 erDiagram
-    USER ||--o{ PROPOSAL : "投稿する"
-    USER ||--o{ SIGNATURE : "署名する"
-    PROPOSAL ||--o{ SIGNATURE : "集める"
-    PROPOSAL ||--o| JURISDICTION : "紐づく"
-    PROPOSAL ||--o| SCORE : "算出される"
-    PROPOSAL ||--o{ STATUS_HISTORY : "記録される"
-    PROPOSAL ||--o{ ATTACHMENT : "添付される"
-    PROPOSAL ||--o| BUDGET_ALLOCATION : "予算化される"
-    PROPOSAL ||--o| GREEN_AGREEMENT : "私有地の場合、締結する"
-    BUDGET_CYCLE ||--o{ BUDGET_ALLOCATION : "含む"
-    USER ||--o| ADMIN_ROLE : "行政職員の場合、持つ"
-
-    USER {
-      string id PK
-      string display_name "本名等。行政ダッシュボード以外には非表示"
-      string handle "公開画面用の匿名ID（例: 都民-A1B2）"
-      string line_user_id "LINEログイン識別子（ハッシュ化）"
-      string user_type "citizen | admin(企業アカウントは設けない)"
-      datetime created_at
-    }
-
-    PROPOSAL {
-      string id PK
-      string user_id FK
-      string category "bench | shade | planting | private_greening | other"
-      string title
-      text description
-      float lat
-      float lng
-      string land_type "public_metro | public_ward | private | unknown"
-      string status "draft | collecting | screening | adopted | in_progress | completed | rejected"
-      int signature_target "必要署名数（案件規模で可変）"
-      datetime created_at
-    }
-
-    SIGNATURE {
-      string id PK
-      string proposal_id FK
-      string user_id FK
-      datetime signed_at
-    }
-
-    JURISDICTION {
-      string id PK
-      string proposal_id FK
-      string authority_name "所管部署（例: 建設局/環境局/区みどり公園課）"
-      string determination_method "gis_auto | manual_review"
-    }
-
-    SCORE {
-      string id PK
-      string proposal_id FK
-      float signature_score
-      float open_data_score "緑被率・人口密度等から算出"
-      float total_score
-      datetime calculated_at
-    }
-
-    STATUS_HISTORY {
-      string id PK
-      string proposal_id FK
-      string from_status
-      string to_status
-      string changed_by_user_id FK
-      datetime changed_at
-    }
-
-    ATTACHMENT {
-      string id PK
-      string proposal_id FK
-      string type "photo_before | photo_after"
-      string url
-    }
-
-    BUDGET_CYCLE {
-      string id PK
-      string name "例: 2026年度第2四半期 参加型緑化予算枠"
-      float total_amount
-      date start_date
-      date end_date
-    }
-
-    BUDGET_ALLOCATION {
-      string id PK
-      string proposal_id FK
-      string budget_cycle_id FK
-      float allocated_amount
-      string decision_note
-    }
-
-    GREEN_AGREEMENT {
-      string id PK
-      string proposal_id FK
-      int minimum_years "最低継続年数（原案では5年）"
-      date agreed_at
-      string report_status "定期報告の状況"
-    }
-
-    ADMIN_ROLE {
-      string id PK
-      string user_id FK
-      string jurisdiction_scope "所管範囲"
-      string role_level "reviewer | approver"
-    }
-
-    PUBLIC_SITE {
-      string id PK
-      string name "施設・道路名（例: 太子堂公園、世田谷区立中央図書館、世田谷通り）"
-      string ward "区市町村名"
-      float lat
-      float lng
-      string land_type "public_metro | public_ward"
-      string kind "park | library | road | other"
-    }
+  User ||--o{ Proposal : "投稿"
+  User ||--o{ Signature : "署名"
+  User ||--o| AdminRole : "行政職員のみ"
+  Proposal ||--o{ Signature : ""
+  Proposal ||--o| Jurisdiction : "管轄判定"
+  Proposal ||--o| Score : "優先度スコア"
+  Proposal ||--o{ StatusHistory : "進捗履歴"
+  Proposal ||--o{ Attachment : "写真(最大5枚)"
+  Proposal ||--o{ NotificationLog : "送信予定ログ"
+  Proposal ||--o| BudgetAllocation : ""
+  Proposal ||--o| GreenAgreement : ""
+  Jurisdiction }o--|| Authority : "担当部署"
+  PublicSite }o--o| Authority : "担当部署"
+  RoadSegment }o--o| Authority : "担当部署"
+  NotificationLog }o--o| Authority : "宛先"
 ```
 
-> `PUBLIC_SITE` は `PROPOSAL` と外部キーでは結ばれていない（投稿作成時に選択した施設の `lat`/`lng`/`land_type` を `PROPOSAL` 側へコピーする設計。2章参照）。そのため上記ER図には関係線を記載していない。
+`PublicSite`は`Proposal`と外部キーでは結ばれていない(投稿作成時に選択した施設の緯度経度・土地種別を`Proposal`側へコピーする設計)。
 
-## 2. 補足（設計上の判断根拠）
+## モデル一覧
 
-- **`PROPOSAL.land_type` を早期に持たせる理由**：原案の「①縦割り行政・管轄の壁」への対処として、GIS位置情報から公有地/私有地・所管を自動タグ付けする方針（[01-requirements.md](./01-requirements.md) F9）をデータ構造から担保する。
-- **`PUBLIC_SITE`（公園・図書館・道路等の施設マスタ）を追加した理由**：新規投稿を都・区市町村が管理する公有地に限定する運用（[01-requirements.md](./01-requirements.md) F2・F9の変更、[07-impact-and-policy.md](./07-impact-and-policy.md) 3.4節）に伴い、`land_type` を投稿者の自己申告ではなく、選択した公共施設・道路のマスタデータから自動決定できるようにするために追加した独立エンティティ。`PROPOSAL` とは直接の外部キー関係を持たず（投稿時に緯度経度・land_typeをコピーする設計）、区市町村ごとの施設一覧を今後拡充しやすくしている。
-- **`SCORE` を `PROPOSAL` から分離した理由**：署名数は随時変動し、オープンデータ側の指標も更新され得るため、スコアは再計算可能な独立エンティティとして履歴管理できるようにする（原案の「②声の大きさによる偏り」への対処＝単純な署名数順ではなく複合指標にするため）。
-- **`STATUS_HISTORY` を持つ理由**：原案の「公共デザインの視点：民主的統制」（判断根拠の透明化・異議申立て可能性）に対応するため、ステータス変更を誰が・いつ行ったかを追跡可能にする。
-- **`GREEN_AGREEMENT` を独立エンティティにした理由**：原案の「③私有地緑化の権利と維持管理」対策（緑地協定の締結を助成要件化）をデータとして表現する。
-- **`BUDGET_CYCLE` / `BUDGET_ALLOCATION` は実際の会計処理と分離**：[01-requirements.md](./01-requirements.md) のスコープ定義どおり、実予算執行（振込等）は対象外のため、あくまで「決定を記録する」台帳としてのみ扱う。
-- **`USER.handle` を `display_name` と分離した理由**：提案の投稿者名が公開画面にそのまま出ると個人情報の観点で問題があるため、公開用の匿名ID（handle）を別に持たせ、公開画面（提案詳細・進捗履歴等）は`handle`のみを参照する。本名（`display_name`）を参照できるのは行政ダッシュボードに限定する（[01-requirements.md](./01-requirements.md) 非機能要件「データ保護」）。
+### User
+`displayName`(本名。行政ダッシュボードのみ表示)、`handle`(公開ID。都民向け画面はこちらのみ表示)、`userType`(`citizen`|`admin`)。
 
-## 3. MVPで簡略化する点（要検証）
+### Proposal
+提案本体。`category`・`landType`・`status`は文字列カラム(`lib/enums.ts`のリテラル型で検証)。`landType`は投稿時に選んだ`PublicSite`の値がそのままコピーされる。
 
-- `SCORE.open_data_score` の算出式は、実際に取得できたオープンデータ指標（[03-external-integration.md](./03-external-integration.md)）によって変わるため、MVP実装時に確定させる（現時点では緑被率・人口密度を仮の指標として想定）。
-- `JURISDICTION.determination_method` は当面 `manual_review` を許容し、GIS自動判定（`gis_auto`）は対象エリアが確定してから有効化する。
-- `PROPOSAL.land_type = "private"` および `category = "private_greening"` は、現在の新規投稿では選択不可（[01-requirements.md](./01-requirements.md) F2の運用変更）。既存の私有地緑化提案データは過去分として保持し、行政ダッシュボード等での表示は継続する。
+### Signature
+`@@unique([proposalId, userId])`で1提案1署名を保証。
+
+### Attachment
+提案の写真。`type`は`photo_before`/`photo_after`。新規投稿は1〜5枚の`photo_before`を作成する(`app/prisma/ingest/`ではなく`(citizen)/proposals/new/actions.ts`側)。
+
+### StatusHistory
+ステータス変更の履歴。`fromStatus`がnullの行が「投稿(初期状態)」を表す。
+
+### Score
+`signatureScore`(署名数ベース)+`openDataScore`(土地種別・カテゴリ等から算出)の合成値`totalScore`。計算ロジックは`app/src/lib/scoring.ts`。
+
+### Jurisdiction
+提案の管轄判定結果。`authorityId`(`Authority`への参照、判定できた場合のみ)と`authorityName`(表示用の非正規化キャッシュ)を両方持つ。`determinationMethod`は`site_match` / `road_match` / `ward_fallback` / `manual_review`。
+
+### Authority(F9本格版)
+管轄先の実体(部署)。`category`(`park`|`road`|`private`|`other`)、`ward`(都道府県道・都立施設担当はnull)、`contactEmail`(実在確認できたもののみ。無ければnull)、`sourceNote`(部署名・連絡先の出典メモ)。`app/prisma/ingest/seedAuthorities.ts`で投入する。
+
+### PublicSite
+都・区市町村が管理する公園・図書館・道路のマスタ。新規提案フォームの「区市→施設名」選択、および管轄自動判定の近傍一致に使う。`sourceUrl`(オープンデータの出典URL。手打ちデータはnull)、`authorityId`(取り込み時に紐付け済みの担当部署)。**23区中15区・約3,300件**が東京都オープンデータの実データ(`app/prisma/ingest/fetchParks.ts`)、残りは元からの手打ちデータ。
+
+### RoadSegment
+道路網データのキャッシュ用に用意したモデル(`roadTypeCode`/`roadTypeLabel`/`geometry`など)。**現時点では未投入(空テーブル)**。国土交通省「国土数値情報」道路データ(N01)の生きた配布リンクが見つからず、代替のN06は高速道路専用データだったため、実データを取り込めていない。詳細は[05-roadmap.md](./05-roadmap.md)。
+
+### NotificationLog
+「将来、管轄先へ自動でメール送信したい」の土台。`status`は`planned`のみ(実送信ロジックは未実装)。新規提案が作成され`Jurisdiction.authorityId`が特定できるたびに1件作成される。
+
+### BudgetCycle / BudgetAllocation / GreenAgreement
+予算枠・予算配分・緑地協定(私有地緑化の継続年数管理)。現状はシードデータのみで、専用の操作画面はまだ無い。
+
+### AdminRole
+行政職員の担当スコープ表示用(`jurisdictionScope`は自由文字列)。**現状はダッシュボードのフィルタには使っておらず、表示ラベルのみ**(どの行政職員も全提案を閲覧・操作できる)。

@@ -7,7 +7,7 @@ import ProposalCard from "@/components/ProposalCard";
 import CategoryIcon from "@/components/CategoryIcon";
 import { ChevronRightIcon, MailboxIcon, SignatureIcon, TrophyIcon, UsersIcon } from "@/components/icons";
 import {
-  PROPOSAL_CATEGORIES,
+  CREATABLE_CATEGORIES,
   PROPOSAL_CATEGORY_LABELS,
   PROPOSAL_CATEGORY_COLOR,
   ProposalCategory,
@@ -100,28 +100,28 @@ export default async function MapPage() {
 
   return (
     <div>
-      {/* --- ヒーロー --- */}
-      <section className="bg-forest-900">
+      {/* --- ヒーロー(My City Reportを参考に白背景+明るい緑のアクセント) --- */}
+      <section className="bg-white border-b border-slate-100">
         <div className="mx-auto max-w-6xl px-5 pt-12 pb-10">
-          <p className="text-forest-300 text-xs font-semibold tracking-widest">GREENVOICE TOKYO</p>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-white mt-2 leading-tight max-w-xl">
+          <p className="text-forest-600 text-xs font-semibold tracking-widest">GREENVOICE TOKYO</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-forest-950 mt-2 leading-tight max-w-xl">
             まちの「みどり」を、
             <br />
             みんなの声でつくる。
           </h1>
-          <p className="text-forest-200 text-sm mt-4 max-w-lg leading-relaxed">
+          <p className="text-slate-600 text-sm mt-4 max-w-lg leading-relaxed">
             公園設備の要望から植樹・緑化、私有地の樹木管理まで。あなたの声が地図に載り、共感が集まるほど、行政での検討につながります。
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/proposals/new"
-              className="rounded-sm bg-white text-forest-900 text-sm font-semibold px-6 py-3 hover:bg-forest-100 transition-colors"
+              className="rounded-sm bg-forest-600 text-white text-sm font-semibold px-6 py-3 hover:bg-forest-700 transition-colors"
             >
               + 提案してみる
             </Link>
             <a
               href="#realized"
-              className="rounded-sm border border-forest-400 text-forest-100 text-sm font-semibold px-6 py-3 hover:bg-forest-800 transition-colors"
+              className="rounded-sm border border-forest-300 text-forest-700 text-sm font-semibold px-6 py-3 hover:bg-forest-50 transition-colors"
             >
               実現した事例を見る
             </a>
@@ -239,7 +239,7 @@ export default async function MapPage() {
             }))}
           />
           <div className="mt-3 flex flex-wrap gap-2">
-            {PROPOSAL_CATEGORIES.map((c) => (
+            {CREATABLE_CATEGORIES.map((c) => (
               <span
                 key={c}
                 className="inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-xs font-medium"

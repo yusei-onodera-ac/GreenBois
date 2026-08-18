@@ -26,7 +26,7 @@ export default async function ProposalDetailPage({
 }) {
   const { id } = await params;
 
-  // 情報フローは docs/08-admin-data-flow.md 参照。都民向けは本名を一切取得しない
+  // 情報フローは docs/06-admin-data-flow.md 参照。都民向けは本名を一切取得しない
   // (提案者・ステータス変更者ともハンドルのみ)。署名者個人の情報も取得しない。
   const [proposal, user] = await Promise.all([
     prisma.proposal.findUnique({

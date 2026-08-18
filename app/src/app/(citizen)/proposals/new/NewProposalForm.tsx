@@ -6,7 +6,7 @@ import LocationPicker, { type PublicSite } from "@/components/LocationPicker";
 import CategoryIcon from "@/components/CategoryIcon";
 import { CameraIcon } from "@/components/icons";
 import {
-  PROPOSAL_CATEGORIES,
+  CREATABLE_CATEGORIES,
   PROPOSAL_CATEGORY_LABELS,
   PROPOSAL_CATEGORY_COLOR,
   ProposalCategory,
@@ -14,10 +14,6 @@ import {
 
 const DEFAULT_POS = { lat: 35.6438, lng: 139.6688 };
 const MAX_PHOTOS = 5;
-
-// 新規提案は公有地(公園等)に限定するため、私有地緑化は選択肢から外す
-// (既存の私有地提案データは行政ダッシュボード等に残したまま、新規作成のみ制限する)。
-const CREATABLE_CATEGORIES = PROPOSAL_CATEGORIES.filter((c) => c !== "private_greening");
 
 // 行政の申請フォームによくある「手順が見える」番号付きラベル。
 function StepLabel({ n, children }: { n: number; children: React.ReactNode }) {

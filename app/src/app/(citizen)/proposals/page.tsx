@@ -5,6 +5,7 @@ import CategoryIcon from "@/components/CategoryIcon";
 import { ChevronRightIcon } from "@/components/icons";
 import {
   PROPOSAL_CATEGORIES,
+  CREATABLE_CATEGORIES,
   PROPOSAL_CATEGORY_LABELS,
   PROPOSAL_CATEGORY_COLOR,
   ProposalCategory,
@@ -61,18 +62,18 @@ export default async function ProposalListPage({
   return (
     <div>
       {/* --- ページ見出し帯：マップ/詳細ページと同じトーンで揃える --- */}
-      <section className="bg-forest-900">
+      <section className="bg-white border-b border-slate-100">
         <div className="mx-auto max-w-6xl px-5 py-10">
           <Link
             href="/map"
-            className="inline-flex items-center gap-1 text-sm text-forest-200 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1 text-sm text-forest-700 hover:text-forest-900 transition-colors"
           >
             ← マップに戻る
           </Link>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white mt-3">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-forest-950 mt-3">
             {showCompletedOnly ? "実現した提案" : SORT_TITLES[activeSort]}
           </h1>
-          <p className="text-forest-200 text-sm mt-2">
+          <p className="text-slate-600 text-sm mt-2">
             {proposals.length}件の提案を表示しています。
           </p>
         </div>
@@ -92,7 +93,7 @@ export default async function ProposalListPage({
             >
               すべて
             </Link>
-            {PROPOSAL_CATEGORIES.map((c) => {
+            {CREATABLE_CATEGORIES.map((c) => {
               const active = activeCategory === c;
               return (
                 <Link

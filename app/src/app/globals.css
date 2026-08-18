@@ -9,18 +9,24 @@
     "Noto Sans JP", "Noto Sans", sans-serif;
   --font-mono: ui-monospace, monospace;
 
-  /* GreenVoice TOKYO ブランドパレット(プレゼン資料と統一) */
-  --color-forest-950: #101d17;
-  --color-forest-900: #16352a;
-  --color-forest-800: #1b4332;
-  --color-forest-700: #204b39;
-  --color-forest-600: #2d6a4f;
-  --color-forest-500: #3f7a5c;
-  --color-forest-400: #74c69d;
-  --color-forest-300: #a3dcbd;
-  --color-forest-200: #d6f0e2;
-  --color-forest-100: #e9f6ef;
-  --color-forest-50: #f4faf6;
+  /* GreenVoice TOKYO ブランドパレット。
+     「My City Report」(東京都建設局が実際に採用している通報プラットフォーム。
+     白背景+明るい緑 #458934 系統)を参考に、白基調＋明るい緑へ刷新
+     (以前は深い森のような濃色グリーンで背景色としても多用していたが、
+     見づらい・暗い、というフィードバックを受けて全体的に明度・彩度を上げた)。
+     ヒーロー/ヘッダー/フッター等の「面」は原則この明るいグリーンではなく白を使い、
+     グリーンはボタン・見出し・アクセントに限定して使う。 */
+  --color-forest-950: #0f2110;
+  --color-forest-900: #163a1a;
+  --color-forest-800: #1f5c26;
+  --color-forest-700: #2f8f39;
+  --color-forest-600: #3fae4a;
+  --color-forest-500: #52c15e;
+  --color-forest-400: #7ed88a;
+  --color-forest-300: #a8e8b0;
+  --color-forest-200: #d1f2d5;
+  --color-forest-100: #e8f8ea;
+  --color-forest-50: #f3fbf4;
 
   --color-clay-700: #a8442f;
   --color-clay-600: #c75b41;
@@ -43,8 +49,8 @@
   --color-status-adopted-bg: #f0fdfa;
   --color-status-in_progress: #6d28d9;
   --color-status-in_progress-bg: #f5f3ff;
-  --color-status-completed: #204b39;
-  --color-status-completed-bg: #e9f6ef;
+  --color-status-completed: var(--color-forest-700);
+  --color-status-completed-bg: var(--color-forest-100);
   --color-status-rejected: #b91c1c;
   --color-status-rejected-bg: #fef2f2;
 }

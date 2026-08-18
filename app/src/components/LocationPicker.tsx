@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Map as MaplibreMap, Marker, Popup, NavigationControl, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { OSM_MAP_STYLE, GSI_PHOTO_STYLE } from "@/lib/mapStyle";
+import { getOsmMapStyle, getGsiPhotoStyle } from "@/lib/mapStyle";
 import { TOKYO_WARDS, MUNI_CD_TO_WARD } from "@/lib/tokyoWards";
 import { pickNearestByPriority } from "@/lib/geo";
 
@@ -191,7 +191,7 @@ export default function LocationPicker({
 
     const map = new MaplibreMap({
       container: containerRef.current,
-      style: OSM_MAP_STYLE,
+      style: getOsmMapStyle(),
       center: [value.lng || DEFAULT_CENTER[0], value.lat || DEFAULT_CENTER[1]],
       zoom: 14,
     });
@@ -228,7 +228,7 @@ export default function LocationPicker({
     setMapMode(next);
     // setStyleはレイヤー/ソースだけを差し替える(Marker/PopupはDOM要素として
     // 地図とは別に重ねているため、スタイル切り替えの影響を受けず消えない)。
-    mapRef.current?.setStyle(next === "map" ? OSM_MAP_STYLE : GSI_PHOTO_STYLE);
+    mapRef.current?.setStyle(next === "map" ? getOsmMapStyle() : getGsiPhotoStyle());
   }
 
   function moveTo(lat: number, lng: number, zoom = 15) {

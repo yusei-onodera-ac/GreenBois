@@ -1,33 +1,17 @@
 # GreenVoice TOKYO ドキュメント
 
-東京都オープンデータ・ハッカソン提案事業「GreenVoice TOKYO」の要件定義・構想ドキュメント一式。原案PDF「新規行政サービス事業案『GreenVoice TOKYO』」を土台に、実装可能なレベルまで深化させたもの。
+都民が「街に必要な緑」を地図上に提案し、デジタル署名で共感を可視化する、ボトムアップ型グリーンインフラ・プラットフォーム。
 
-## 読む順番
+このディレクトリは実装済みのアプリの現状を説明するドキュメント群です(以前あった構想段階のドキュメントは、実装との乖離が大きくなったため作り直しました)。
 
-1. [00-concept.md](./00-concept.md) — 構想サマリー（課題構造、三方よし、行政経営レベル、何が仮説で何が確認済みか）
-2. [01-requirements.md](./01-requirements.md) — 要件定義（スコープ、ペルソナ、機能要件、非機能要件）
-3. [02-data-model.md](./02-data-model.md) — データモデル（ER図）
-4. [03-external-integration.md](./03-external-integration.md) — 外部データ・API連携方針（実データ/モックの判断）
-5. [04-architecture.md](./04-architecture.md) — 技術アーキテクチャ（Next.js + TypeScript構成）
-6. [05-roadmap.md](./05-roadmap.md) — ロードマップと各フェーズの完了条件
-7. [presentation/GreenVoice_TOKYO.pptx](./presentation/GreenVoice_TOKYO.pptx) — 上記をまとめたプレゼン資料(pptx、全19枚)
-8. [06-presentation-outline.md](./06-presentation-outline.md) — プレゼン資料のテキスト版アウトライン(バックアップ・他ツールでの再生成用)
-9. [07-impact-and-policy.md](./07-impact-and-policy.md) — 期待される効果（都民の生活・行政双方へのメリット）と、行政制度への具体的な提言。外部エビデンス（学術研究・政府統計・先行事例）付き
-10. [08-admin-data-flow.md](./08-admin-data-flow.md) — 行政向けページ（`/admin`）に実際どの情報が渡るかのフィールド単位の仕様
+| ドキュメント | 内容 |
+| --- | --- |
+| [00-concept.md](./00-concept.md) | サービスの一言概要、対象範囲、現在の到達点 |
+| [01-requirements.md](./01-requirements.md) | 実装済み機能の一覧(都民向け・行政向け) |
+| [02-data-model.md](./02-data-model.md) | Prismaスキーマ(ER図・各モデルの役割) |
+| [03-external-integration.md](./03-external-integration.md) | 実際に接続している外部データ・API(国土地理院・東京都オープンデータ) |
+| [04-architecture.md](./04-architecture.md) | 技術スタック・ディレクトリ構成・デザインシステム |
+| [05-roadmap.md](./05-roadmap.md) | 未実装・既知の制約と、今後の方針 |
+| [06-admin-data-flow.md](./06-admin-data-flow.md) | 都民向け/行政向けで見える情報の違い(プライバシー設計) |
 
-## 現在のステータス
-
-- フェーズ：要件定義・構想深化（Phase 0）— 完了
-- 次フェーズ：本ドキュメント群のレビュー後、Next.jsプロジェクトのスキャフォールディング（Phase 1実装）に着手予定
-
-## 未解決の「要検証」事項の一覧
-
-各ドキュメントに散在する要検証事項をここに集約する。実装着手前に解消・再確認すること。
-
-- 「緑のオープンデータ」の実ダウンロードURL・ライセンス条件・更新頻度（[03](./03-external-integration.md)）
-- 公園施設情報APIのカバー自治体一覧とAPIキー取得手順（[03](./03-external-integration.md)）
-- 熱環境・表面温度データの機械可読な公開有無（[03](./03-external-integration.md)）
-- e-Stat等の人口統計APIの利用規約・レート制限（[03](./03-external-integration.md)）
-- LINEログインのデベロッパー登録・審査期間（[03](./03-external-integration.md)）
-- ホスティング先の国内データ保存要件への適合（[04](./04-architecture.md)）
-- PostGIS対応マネージドDBサービスの選定（[04](./04-architecture.md)）
+`docs/presentation/` にはハッカソン提出用のスライド(pptx)を別途置いています。

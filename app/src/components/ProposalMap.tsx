@@ -7,12 +7,18 @@ import Link from "next/link";
 import { createRoot } from "react-dom/client";
 import {
   PROPOSAL_CATEGORY_LABELS,
-  PROPOSAL_CATEGORY_COLOR,
   PROPOSAL_STATUS_LABELS,
   ProposalCategory,
   ProposalStatus,
 } from "@/lib/enums";
-import { OSM_MAP_STYLE } from "@/lib/mapStyle";
+import { getOsmMapStyle } from "@/lib/mapStyle";
+import CategoryIcon from "./CategoryIcon";
+
+// カテゴリは色ではなくアイコンで区別する(色はブランドカラーの緑に統一済み。
+// src/lib/enums.tsのPROPOSAL_CATEGORY_COLOR参照)。ピン自体はこのブランドグリーン、
+// 複数件をまとめたクラスタ用の丸はより濃い緑にして区別する。
+const PIN_COLOR = "#2f8f39";
+const CLUSTER_COLOR = "#163a1a";
 
 export type MapProposal = {
   id: string;
@@ -35,11 +41,12 @@ type ClusterGroup = {
   lat: number;
 };
 
-function buildPopupNode(p: MapProposal, color: string) {
+function buildPopupNode(p: MapProposal) {
   const node = document.createElement("div");
   createRoot(node).render(
     <div style={{ minWidth: 180 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: PIN_COLOR, display: "flex", alignItems: "center", gap: 4 }}>
+        <CategoryIcon category={p.category} className="h-3 w-3" />
         {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
       </div>
       <div style={{ fontWeight: 600, margin: "2px 0 4px" }}>{p.title}</div>
@@ -69,7 +76,7 @@ export default function ProposalMap({ proposals }: { proposals: MapProposal[] })
 
     const map = new MaplibreMap({
       container: containerRef.current,
-      style: OSM_MAP_STYLE,
+      style: getOsmMapStyle(),
       center: [139.6688, 35.6438], // 世田谷区・太子堂付近(シードデータの中心)
       zoom: 12,
     });
@@ -105,16 +112,19 @@ export default function ProposalMap({ proposals }: { proposals: MapProposal[] })
 
         if (g.items.length === 1) {
           const p = g.items[0];
-          const color = PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280";
-          el.style.width = "20px";
-          el.style.height = "20px";
+          el.style.width = "28px";
+          el.style.height = "28px";
           el.style.borderRadius = "50%";
           el.style.border = "2px solid white";
           el.style.boxShadow = "0 1px 3px rgba(0,0,0,0.4)";
-          el.style.backgroundColor = color;
+          el.style.backgroundColor = PIN_COLOR;
+          el.style.display = "flex";
+          el.style.alignItems = "center";
+          el.style.justifyContent = "center";
+          createRoot(el).render(<CategoryIcon category={p.category} className="h-3.5 w-3.5 text-white" />);
 
           const marker = new Marker({ element: el }).setLngLat([p.lng, p.lat]);
-          marker.setPopup(new Popup({ offset: 12 }).setDOMContent(buildPopupNode(p, color)));
+          marker.setPopup(new Popup({ offset: 16 }).setDOMContent(buildPopupNode(p)));
           marker.addTo(map);
           markersRef.current.push(marker);
         } else {
@@ -124,7 +134,7 @@ export default function ProposalMap({ proposals }: { proposals: MapProposal[] })
           el.style.borderRadius = "50%";
           el.style.border = "2px solid white";
           el.style.boxShadow = "0 1px 3px rgba(0,0,0,0.4)";
-          el.style.backgroundColor = "#1b4332";
+          el.style.backgroundColor = CLUSTER_COLOR;
           el.style.color = "#ffffff";
           el.style.display = "flex";
           el.style.alignItems = "center";

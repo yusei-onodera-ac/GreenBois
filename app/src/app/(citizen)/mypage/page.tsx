@@ -33,28 +33,28 @@ export default async function MyPage() {
   return (
     <div>
       {/* --- プロフィール帯 --- */}
-      <section className="bg-forest-900">
+      <section className="bg-white border-b border-slate-100">
         <div className="mx-auto max-w-3xl px-4 py-10 flex items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-forest-400 text-forest-950 font-display text-xl font-bold">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-forest-600 text-white font-display text-xl font-bold">
             {user.displayName.slice(0, 1)}
           </span>
           <div>
-            <h1 className="font-display text-2xl font-semibold text-white">{user.displayName} さん</h1>
-            <p className="text-xs text-forest-300 mt-0.5">
+            <h1 className="font-display text-2xl font-semibold text-forest-950">{user.displayName} さん</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
               他の利用者にはあなたの名前ではなく公開ID「
-              <span className="font-medium text-forest-100">{user.handle}</span>」が表示されます。
+              <span className="font-medium text-forest-700">{user.handle}</span>」が表示されます。
             </p>
           </div>
         </div>
-        <div className="border-t border-forest-800 bg-forest-950/40">
+        <div className="border-t border-slate-100 bg-forest-50/60">
           <div className="mx-auto max-w-3xl px-4 py-4 flex gap-8 text-sm">
             <div>
-              <span className="font-display text-xl font-bold text-white">{myProposals.length}</span>
-              <span className="text-forest-300 ml-1.5">件の投稿</span>
+              <span className="font-display text-xl font-bold text-forest-950">{myProposals.length}</span>
+              <span className="text-slate-500 ml-1.5">件の投稿</span>
             </div>
             <div>
-              <span className="font-display text-xl font-bold text-white">{mySignatures.length}</span>
-              <span className="text-forest-300 ml-1.5">件の署名</span>
+              <span className="font-display text-xl font-bold text-forest-950">{mySignatures.length}</span>
+              <span className="text-slate-500 ml-1.5">件の署名</span>
             </div>
           </div>
         </div>
