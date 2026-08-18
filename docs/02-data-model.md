@@ -23,7 +23,7 @@ erDiagram
       string display_name "本名等。行政ダッシュボード以外には非表示"
       string handle "公開画面用の匿名ID（例: 都民-A1B2）"
       string line_user_id "LINEログイン識別子（ハッシュ化）"
-      string user_type "citizen | corporate | admin"
+      string user_type "citizen | admin(企業アカウントは設けない)"
       datetime created_at
     }
 
@@ -110,11 +110,24 @@ erDiagram
       string jurisdiction_scope "所管範囲"
       string role_level "reviewer | approver"
     }
+
+    PUBLIC_SITE {
+      string id PK
+      string name "施設・道路名（例: 太子堂公園、世田谷区立中央図書館、世田谷通り）"
+      string ward "区市町村名"
+      float lat
+      float lng
+      string land_type "public_metro | public_ward"
+      string kind "park | library | road | other"
+    }
 ```
+
+> `PUBLIC_SITE` は `PROPOSAL` と外部キーでは結ばれていない（投稿作成時に選択した施設の `lat`/`lng`/`land_type` を `PROPOSAL` 側へコピーする設計。2章参照）。そのため上記ER図には関係線を記載していない。
 
 ## 2. 補足（設計上の判断根拠）
 
 - **`PROPOSAL.land_type` を早期に持たせる理由**：原案の「①縦割り行政・管轄の壁」への対処として、GIS位置情報から公有地/私有地・所管を自動タグ付けする方針（[01-requirements.md](./01-requirements.md) F9）をデータ構造から担保する。
+- **`PUBLIC_SITE`（公園・図書館・道路等の施設マスタ）を追加した理由**：新規投稿を都・区市町村が管理する公有地に限定する運用（[01-requirements.md](./01-requirements.md) F2・F9の変更、[07-impact-and-policy.md](./07-impact-and-policy.md) 3.4節）に伴い、`land_type` を投稿者の自己申告ではなく、選択した公共施設・道路のマスタデータから自動決定できるようにするために追加した独立エンティティ。`PROPOSAL` とは直接の外部キー関係を持たず（投稿時に緯度経度・land_typeをコピーする設計）、区市町村ごとの施設一覧を今後拡充しやすくしている。
 - **`SCORE` を `PROPOSAL` から分離した理由**：署名数は随時変動し、オープンデータ側の指標も更新され得るため、スコアは再計算可能な独立エンティティとして履歴管理できるようにする（原案の「②声の大きさによる偏り」への対処＝単純な署名数順ではなく複合指標にするため）。
 - **`STATUS_HISTORY` を持つ理由**：原案の「公共デザインの視点：民主的統制」（判断根拠の透明化・異議申立て可能性）に対応するため、ステータス変更を誰が・いつ行ったかを追跡可能にする。
 - **`GREEN_AGREEMENT` を独立エンティティにした理由**：原案の「③私有地緑化の権利と維持管理」対策（緑地協定の締結を助成要件化）をデータとして表現する。
@@ -125,3 +138,4 @@ erDiagram
 
 - `SCORE.open_data_score` の算出式は、実際に取得できたオープンデータ指標（[03-external-integration.md](./03-external-integration.md)）によって変わるため、MVP実装時に確定させる（現時点では緑被率・人口密度を仮の指標として想定）。
 - `JURISDICTION.determination_method` は当面 `manual_review` を許容し、GIS自動判定（`gis_auto`）は対象エリアが確定してから有効化する。
+- `PROPOSAL.land_type = "private"` および `category = "private_greening"` は、現在の新規投稿では選択不可（[01-requirements.md](./01-requirements.md) F2の運用変更）。既存の私有地緑化提案データは過去分として保持し、行政ダッシュボード等での表示は継続する。

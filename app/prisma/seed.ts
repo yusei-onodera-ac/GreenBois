@@ -16,6 +16,7 @@ async function main() {
   await prisma.proposal.deleteMany();
   await prisma.budgetCycle.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.publicSite.deleteMany();
 
   const citizenA = await prisma.user.create({
     data: {
@@ -33,14 +34,6 @@ async function main() {
       userType: "citizen",
     },
   });
-  const corporate = await prisma.user.create({
-    data: {
-      displayName: "株式会社グリーンビルド 環境担当",
-      handle: "企業-C90A",
-      lineUserId: "line_demo_corp",
-      userType: "corporate",
-    },
-  });
   const admin = await prisma.user.create({
     data: {
       displayName: "東京都 建設局 担当者",
@@ -49,7 +42,7 @@ async function main() {
       userType: "admin",
     },
   });
-  const users = [citizenA, citizenB, corporate];
+  const users = [citizenA, citizenB];
 
   await prisma.adminRole.create({
     data: { userId: admin.id, jurisdictionScope: "世田谷区ほか", roleLevel: "reviewer" },
@@ -64,8 +57,41 @@ async function main() {
     },
   });
 
+  // 公共施設・道路マスタ(新規提案の「区市 → 施設名」予測選択用、src/components/LocationPicker.tsx)。
+  // 公園に限らず、都・区市町村が管理する図書館・道路等も対象にする。
+  // 既存の提案シードが使っている公園名・座標(太子堂公園・駒場公園・中野中央公園・三宿公園)は
+  // そのまま流用し、物語の一貫性を保つ。
+  const publicSiteSpecs = [
+    // --- 世田谷区 ---
+    { name: "太子堂公園", ward: "世田谷区", lat: 35.6438, lng: 139.6688, landType: "public_ward", kind: "park" },
+    { name: "三宿公園", ward: "世田谷区", lat: 35.6491, lng: 139.6748, landType: "public_ward", kind: "park" },
+    { name: "羽根木公園", ward: "世田谷区", lat: 35.6653, lng: 139.6478, landType: "public_ward", kind: "park" },
+    { name: "桜丘公園", ward: "世田谷区", lat: 35.6355, lng: 139.6535, landType: "public_ward", kind: "park" },
+    { name: "世田谷区立中央図書館", ward: "世田谷区", lat: 35.6461, lng: 139.6534, landType: "public_ward", kind: "library" },
+    { name: "世田谷通り", ward: "世田谷区", lat: 35.6402, lng: 139.6631, landType: "public_metro", kind: "road" },
+    // --- 目黒区 ---
+    { name: "駒場公園", ward: "目黒区", lat: 35.6584, lng: 139.6816, landType: "public_metro", kind: "park" },
+    { name: "目黒天空庭園", ward: "目黒区", lat: 35.6217, lng: 139.7108, landType: "public_metro", kind: "park" },
+    { name: "中目黒公園", ward: "目黒区", lat: 35.6469, lng: 139.6989, landType: "public_ward", kind: "park" },
+    { name: "目黒区立八雲中央図書館", ward: "目黒区", lat: 35.6221, lng: 139.6871, landType: "public_ward", kind: "library" },
+    { name: "目黒通り", ward: "目黒区", lat: 35.6338, lng: 139.6934, landType: "public_metro", kind: "road" },
+    // --- 渋谷区 ---
+    { name: "代々木公園", ward: "渋谷区", lat: 35.6717, lng: 139.6949, landType: "public_metro", kind: "park" },
+    { name: "恵比寿東公園", ward: "渋谷区", lat: 35.6466, lng: 139.7136, landType: "public_ward", kind: "park" },
+    { name: "松濤公園", ward: "渋谷区", lat: 35.6584, lng: 139.6899, landType: "public_ward", kind: "park" },
+    { name: "渋谷区立中央図書館", ward: "渋谷区", lat: 35.6626, lng: 139.6893, landType: "public_ward", kind: "library" },
+    { name: "明治通り", ward: "渋谷区", lat: 35.6598, lng: 139.7027, landType: "public_metro", kind: "road" },
+    // --- 中野区 ---
+    { name: "中野中央公園", ward: "中野区", lat: 35.7075, lng: 139.6638, landType: "public_ward", kind: "park" },
+    { name: "哲学堂公園", ward: "中野区", lat: 35.7215, lng: 139.6540, landType: "public_ward", kind: "park" },
+    { name: "平和の森公園", ward: "中野区", lat: 35.7186, lng: 139.6656, landType: "public_ward", kind: "park" },
+    { name: "中野区立中央図書館", ward: "中野区", lat: 35.7075, lng: 139.6725, landType: "public_ward", kind: "library" },
+    { name: "早稲田通り", ward: "中野区", lat: 35.7093, lng: 139.6597, landType: "public_metro", kind: "road" },
+  ];
+  await prisma.publicSite.createMany({ data: publicSiteSpecs });
+
   type Spec = {
-    userIdx: 0 | 1 | 2;
+    userIdx: 0 | 1;
     category: string;
     title: string;
     description: string;
@@ -94,7 +120,7 @@ async function main() {
       title: "太子堂公園に日よけ付きベンチを設置してほしい",
       description: "夏場、子どもを遊ばせている間に休める日陰がありません。日よけ付きベンチの設置を希望します。",
       lat: 35.6438, lng: 139.6688, landType: "public_ward", status: "collecting",
-      signatureTarget: 50, signerCount: 3, daysAgo: 3, photoKeywords: "park,bench,shade",
+      signatureTarget: 50, signerCount: 2, daysAgo: 3, photoKeywords: "park,bench,shade",
     },
     {
       userIdx: 1, category: "park_facility",
@@ -152,26 +178,12 @@ async function main() {
       title: "松陰神社通り商店街に緑のプランターを設置したい",
       description: "商店街全体を緑化し、街歩きが楽しくなる通りにしたいという声が地元で出ています。",
       lat: 35.6469, lng: 139.6716, landType: "public_ward", status: "collecting",
-      signatureTarget: 50, signerCount: 3, daysAgo: 8, photoKeywords: "flower,planter,street",
+      signatureTarget: 50, signerCount: 2, daysAgo: 8, photoKeywords: "flower,planter,street",
     },
 
     // --- 私有地緑化 ---
-    {
-      userIdx: 2, category: "private_greening",
-      title: "自社ビル屋上・敷地緑化によるCSR活動",
-      description: "三軒茶屋の自社ビル屋上および敷地の一部を緑化し、地域の緑化貢献としたい。緑地協定の締結にも協力可能。",
-      lat: 35.6435, lng: 139.6698, landType: "private", status: "collecting",
-      signatureTarget: 300, signerCount: 0, daysAgo: 4, photoKeywords: "rooftop,garden,building",
-      hasGreenAgreement: true,
-    } as Spec & { hasGreenAgreement: boolean },
-    {
-      userIdx: 2, category: "private_greening",
-      title: "下北沢の商業ビル壁面を緑化したい",
-      description: "ESG活動の一環として壁面緑化を検討しており、近隣理解のためのエビデンスとして署名を集めたい。",
-      lat: 35.6613, lng: 139.6683, landType: "private", status: "screening",
-      signatureTarget: 300, signerCount: 3, daysAgo: 25, photoKeywords: "greenwall,facade,building",
-      hasGreenAgreement: true,
-    } as Spec & { hasGreenAgreement: boolean },
+    // 私有地・企業敷地への行政補助金交付は法的に不可能なため、企業発の私有地緑化提案は扱わない
+    // (docs/07-impact-and-policy.md 3.4節)。個人(市民)発の私有地に関する相談のみ過去データとして残す。
     {
       userIdx: 0, category: "private_greening",
       title: "近所の空き地オーナーに市民農園化を提案したい",
@@ -200,7 +212,7 @@ async function main() {
       title: "公園の枯れ木が放置されていて危険なので伐採してほしい",
       description: "台風以降、枯れて倒れかけている木があり、子どもたちが近づくと危険です。",
       lat: 35.6478, lng: 139.6607, landType: "public_ward", status: "adopted",
-      signatureTarget: 30, signerCount: 3, daysAgo: 40, photoKeywords: "dead,tree,forest",
+      signatureTarget: 30, signerCount: 2, daysAgo: 40, photoKeywords: "dead,tree,forest",
     },
     {
       userIdx: 0, category: "tree_care",
@@ -242,13 +254,6 @@ async function main() {
       description: "住民要望から半年、赤堤通りに新しい街路樹が植えられ、夏の日陰が増えました。",
       lat: 35.6553, lng: 139.6459, landType: "public_ward", signatureTarget: 50, completedDaysAgo: 18,
       photoKeywords: "street,trees,sunny",
-    },
-    {
-      userIdx: 2 as const, category: "private_greening",
-      title: "経堂のオフィスビル屋上緑化が完成",
-      description: "企業のCSR活動として提案・実施された屋上緑化。地域の憩いスペースとしても開放されています。",
-      lat: 35.6598, lng: 139.6435, landType: "private", signatureTarget: 300, completedDaysAgo: 60,
-      photoKeywords: "rooftop,garden,office",
     },
   ];
 
@@ -358,7 +363,7 @@ async function main() {
   const AUTHORITY_BY_LAND_TYPE: Record<string, string> = {
     public_metro: "東京都 建設局 公園緑地部",
     public_ward: "区市町村 みどり公園課",
-    private: "東京都 環境局(私有地緑化助成担当)",
+    private: "東京都 環境局(私有地緑化相談窓口)",
     unknown: "未判定(手動割り当て待ち)",
   };
 
@@ -391,6 +396,7 @@ async function main() {
 
   console.log("Seed completed:", {
     proposals: createdProposals.length,
+    publicSites: publicSiteSpecs.length,
     admin: admin.id,
   });
 }

@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "ingest:authorities": "tsx prisma/ingest/seedAuthorities.ts",
+    "ingest:parks": "tsx prisma/ingest/fetchParks.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "csv-parse": "^7.0.2",
     "maplibre-gl": "^6.2.0",
     "next": "16.3.0",
     "prisma": "^5.22.0",

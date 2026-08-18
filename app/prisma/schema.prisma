@@ -21,7 +21,7 @@ model User {
   displayName String // 本名等。行政ダッシュボード以外には表示しない(公開画面は handle を使う)
   handle      String   @unique // 公開画面に表示する匿名ID(例: 都民-A1B2)
   lineUserId  String?  @unique
-  userType    String   @default("citizen") // citizen | corporate | admin
+  userType    String   @default("citizen") // citizen | admin(企業アカウントは設けない。docs/07-impact-and-policy.md 3.2/3.4節）
   createdAt   DateTime @default(now())
 
   proposals     Proposal[]      @relation("UserProposals")
@@ -53,6 +53,7 @@ model Proposal {
   attachments      Attachment[]
   budgetAllocation BudgetAllocation?
   greenAgreement   GreenAgreement?
+  notificationLogs NotificationLog[]
 
   @@map("proposals")
 }
@@ -70,13 +71,66 @@ model Signature {
 }
 
 model Jurisdiction {
-  id                   String   @id @default(cuid())
-  proposalId           String   @unique
-  proposal             Proposal @relation(fields: [proposalId], references: [id])
-  authorityName        String
-  determinationMethod  String   @default("manual_review") // gis_auto | manual_review
+  id                  String     @id @default(cuid())
+  proposalId          String     @unique
+  proposal            Proposal   @relation(fields: [proposalId], references: [id])
+  authorityId         String? // 判定できた場合の Authority への参照(F9本格版)
+  authority           Authority? @relation(fields: [authorityId], references: [id])
+  authorityName       String // 表示用の非正規化キャッシュ(authorityが無い場合はこちらのみ)
+  determinationMethod String     @default("manual_review")
+  // site_match(施設一致) | road_match(道路一致) | ward_fallback(区で判定) | manual_review(landType固定表)
 
   @@map("jurisdictions")
+}
+
+// F9本格版：管轄先の実体(部署)。東京都全域担当と区ごとの担当が混在するため
+// ward は都道府県道・都立施設を扱う部署では null とする。
+// contactEmail は実在を確認できたものだけを入れる(推測・捏造はしない)。
+model Authority {
+  id           String  @id @default(cuid())
+  name         String // 例: "東京都 建設局 公園緑地部" / "世田谷区 みどり公園課"
+  category     String // park | road | private | other
+  ward         String? // 世田谷区 等。都道府県単位の部署は null
+  contactEmail String? // 実在確認済みのみ。無ければ null のまま(推測禁止)
+  sourceNote   String? // 連絡先・部署名の出典メモ
+
+  publicSites      PublicSite[]
+  roadSegments     RoadSegment[]
+  jurisdictions    Jurisdiction[]
+  notificationLogs NotificationLog[]
+
+  @@map("authorities")
+}
+
+// 国土数値情報(KSJ) N01道路データの取り込みキャッシュ(F9本格版・道路の管轄判定用)。
+// アプリのランタイムは外部APIを叩かず、このテーブルに対して近傍探索のみ行う
+// (取り込みは app/prisma/ingest/fetchRoads.ts を手動実行)。
+model RoadSegment {
+  id            String     @id @default(cuid())
+  roadTypeCode  String // KSJ 道路種別コード
+  roadTypeLabel String // 高速道路 | 国道 | 都道府県道 | 市区町村道 等(表示・判定用)
+  routeName     String?
+  geometry      String // 折れ線の座標列(JSON文字列: [[lng,lat], ...])
+  ward          String? // セグメント中間点をGSI逆ジオコーディングして判定した区
+  authorityId   String?
+  authority     Authority? @relation(fields: [authorityId], references: [id])
+
+  @@map("road_segments")
+}
+
+// 「将来、管轄先へ自動でメール送信したい」の土台。実送信(SMTP等)は行わず、
+// 「誰宛に何を送る予定か」の記録のみを持つ(行政ダッシュボードに表示するログ)。
+model NotificationLog {
+  id          String     @id @default(cuid())
+  proposalId  String
+  proposal    Proposal   @relation(fields: [proposalId], references: [id])
+  authorityId String?
+  authority   Authority? @relation(fields: [authorityId], references: [id])
+  channel     String     @default("email")
+  status      String     @default("planned") // planned のみ(実送信は未実装)
+  createdAt   DateTime   @default(now())
+
+  @@map("notification_logs")
 }
 
 model Score {
@@ -157,4 +211,22 @@ model AdminRole {
   roleLevel         String @default("reviewer") // reviewer | approver
 
   @@map("admin_roles")
+}
+
+// 新規提案は公有地(公園・図書館・道路など、都・区市町村が管理する土地)に限定するための
+// 施設・場所マスタ。提案作成フォームで「区市 → 施設名の予測変換」選択に使う
+// (src/components/LocationPicker.tsx)。
+model PublicSite {
+  id          String     @id @default(cuid())
+  name        String
+  ward        String // 世田谷区 等。src/lib/tokyoWards.ts の区名と揃える
+  lat         Float
+  lng         Float
+  landType    String // public_ward | public_metro
+  kind        String     @default("park") // park | library | road | other
+  sourceUrl   String? // 取り込み元オープンデータのURL(透明性のため。手打ちデータはnull)
+  authorityId String?
+  authority   Authority? @relation(fields: [authorityId], references: [id])
+
+  @@map("public_sites")
 }

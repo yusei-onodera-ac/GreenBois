@@ -4,26 +4,25 @@ import { loginAsUser, logout } from "./actions";
 
 const USER_TYPE_LABELS: Record<string, string> = {
   citizen: "都民",
-  corporate: "企業",
-  admin: "行政職員",
 };
 
 export default async function DevLoginPage() {
+  // このサービスは都民のみが利用できる(企業アカウントは設けない、行政職員は /admin/login からログイン)。
   const [users, currentUser] = await Promise.all([
-    prisma.user.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.user.findMany({ where: { userType: "citizen" }, orderBy: { createdAt: "asc" } }),
     getCurrentUser(),
   ]);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
       <h1 className="font-display text-2xl font-semibold text-forest-950 mb-2">ログイン(開発用スタブ)</h1>
-      <p className="text-sm text-stone-600 mb-6">
+      <p className="text-sm text-slate-600 mb-6">
         本番はLINEログインを想定していますが、ローカル開発中はデモユーザーを選んでログインできます。
         (docs/03-external-integration.md参照)
       </p>
 
       {currentUser && (
-        <div className="mb-6 rounded-lg bg-white border border-forest-200 p-4 flex items-center justify-between">
+        <div className="mb-6 rounded-sm bg-forest-50 border border-forest-200 p-4 flex items-center justify-between">
           <span className="text-sm">
             現在ログイン中: <strong>{currentUser.displayName}</strong>
           </span>
@@ -35,18 +34,23 @@ export default async function DevLoginPage() {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {users.map((u) => (
           <form key={u.id} action={loginAsUser}>
             <input type="hidden" name="userId" value={u.id} />
             <button
               type="submit"
-              className="w-full text-left rounded-lg border border-stone-200 bg-white p-4 hover:border-forest-500 hover:bg-forest-50 transition-colors"
+              className="w-full flex items-center gap-3 text-left rounded-sm border border-slate-200 bg-white p-4 hover:border-forest-400 hover:bg-forest-50 transition-colors"
             >
-              <div className="font-semibold">{u.displayName}</div>
-              <div className="text-xs text-stone-500">
-                {USER_TYPE_LABELS[u.userType] ?? u.userType}
-              </div>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-forest-100 text-forest-800 font-display font-semibold text-sm">
+                {u.displayName.slice(0, 1)}
+              </span>
+              <span>
+                <span className="block font-semibold">{u.displayName}</span>
+                <span className="block text-xs text-slate-500">
+                  {USER_TYPE_LABELS[u.userType] ?? u.userType}
+                </span>
+              </span>
             </button>
           </form>
         ))}
