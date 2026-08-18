@@ -14,7 +14,7 @@ export default async function AdminDashboardPage() {
   const user = await getCurrentUser();
   if (!user) return null; // layoutの認証ガードにより実際には到達しない(型の絞り込み用)
 
-  // 情報フローは docs/08-admin-data-flow.md 参照。署名者個人の情報はここでも取得しない。
+  // 情報フローは docs/06-admin-data-flow.md 参照。署名者個人の情報はここでも取得しない。
   const proposals = await prisma.proposal.findMany({
     include: { signatures: { select: { id: true } }, score: true, jurisdiction: true },
     orderBy: [{ score: { totalScore: "desc" } }],

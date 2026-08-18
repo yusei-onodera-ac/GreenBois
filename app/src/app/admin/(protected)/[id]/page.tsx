@@ -27,7 +27,7 @@ export default async function AdminProposalDetailPage({
 }) {
   const { id } = await params;
 
-  // 情報フローは docs/08-admin-data-flow.md 参照。行政向けは本名まで見せる一方、
+  // 情報フローは docs/06-admin-data-flow.md 参照。行政向けは本名まで見せる一方、
   // 署名者個人の情報は(都民・行政どちらにも)一切渡さないよう select で絞り込む。
   const proposal = await prisma.proposal.findUnique({
     where: { id },

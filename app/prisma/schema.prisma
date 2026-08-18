@@ -21,7 +21,7 @@ model User {
   displayName String // 本名等。行政ダッシュボード以外には表示しない(公開画面は handle を使う)
   handle      String   @unique // 公開画面に表示する匿名ID(例: 都民-A1B2)
   lineUserId  String?  @unique
-  userType    String   @default("citizen") // citizen | admin(企業アカウントは設けない。docs/07-impact-and-policy.md 3.2/3.4節）
+  userType    String   @default("citizen") // citizen | admin(企業アカウントは設けない。docs/00-concept.md参照）
   createdAt   DateTime @default(now())
 
   proposals     Proposal[]      @relation("UserProposals")

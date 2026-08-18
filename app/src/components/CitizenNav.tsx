@@ -24,8 +24,8 @@ export default function CitizenNav() {
             href={link.href}
             className={`border-b pb-0.5 transition-colors ${
               active
-                ? "text-white border-forest-300 font-semibold"
-                : "text-forest-100/90 hover:text-white border-transparent hover:border-forest-300"
+                ? "text-forest-800 border-forest-600 font-semibold"
+                : "text-slate-600 hover:text-forest-700 border-transparent hover:border-forest-300"
             }`}
           >
             {link.label}

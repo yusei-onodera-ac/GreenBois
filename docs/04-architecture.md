@@ -1,87 +1,74 @@
-# 04. 技術アーキテクチャ — GreenVoice TOKYO
+# 04. アーキテクチャ
 
-前提：技術スタックはヒアリングにより **Next.js（React）+ TypeScript** に確定済み。データモデルは [02-data-model.md](./02-data-model.md)、外部連携は [03-external-integration.md](./03-external-integration.md) を参照。
+## 技術スタック
 
-## 1. 全体構成
+| 領域 | 採用technology |
+| --- | --- |
+| フレームワーク | Next.js 16(App Router、Server Components + Server Actions) |
+| 言語 | TypeScript |
+| UI | React 19、Tailwind CSS v4 |
+| DB / ORM | SQLite(ローカル開発) + Prisma 5。将来はPostgreSQL(+PostGIS)への切り替えを想定 |
+| 地図 | MapLibre GL JS(ラスタタイル。OSM/GSI) |
+| 認証 | 開発用スタブ(Cookieセッション)。本番はLINEログインを想定 |
+| CSV/データ取り込み | `csv-parse`(東京都オープンデータの取り込みスクリプト用) |
 
-```mermaid
-flowchart LR
-    subgraph Client["クライアント（都民）"]
-        A[Webブラウザ / スマホ]
-    end
-    subgraph AdminClient["行政ダッシュボード"]
-        B[Webブラウザ（PC）]
-    end
-    subgraph App["Next.js アプリケーション（App Router）"]
-        C[UIページ<br/>投稿・署名・進捗]
-        D[管理UIページ<br/>審査・スコア確認]
-        E[API Routes / Server Actions]
-        F[スコアリングバッチ<br/>Cronジョブ or Edge Function]
-    end
-    subgraph Data["データ層"]
-        G[(PostgreSQL + PostGIS)]
-        H[オブジェクトストレージ<br/>写真等]
-    end
-    subgraph External["外部連携"]
-        I[東京都オープンデータ<br/>緑のGIS・公園施設API]
-        J[LINEログイン]
-        K[地図タイル<br/>国土地理院/OSM]
-        L[人口統計 e-Stat]
-    end
+## ディレクトリ構成(`app/src/`)
 
-    A --> C
-    B --> D
-    C --> E
-    D --> E
-    E --> G
-    E --> H
-    E --> J
-    F --> I
-    F --> L
-    F --> G
-    C --> K
-    D --> K
+```
+app/
+  (citizen)/          都民向け画面。専用のheader/footer(layout.tsx)
+    map/               ホーム(ヒーロー・統計・カルーセル・地図)
+    proposals/         一覧・詳細・新規投稿
+    mypage/
+    dev-login/
+  admin/               行政向け画面。都民向けとは別配色・別ヘッダー
+    (protected)/       認証ガード付き(ダッシュボード・詳細)
+    login/
+components/            ページ間で共有するUIコンポーネント
+lib/                   ドメインロジック・ユーティリティ
 ```
 
-## 2. レイヤー別の技術選定
+主要な`lib/`:
 
-| レイヤー | 選定 | 理由 |
-| --- | --- | --- |
-| フロントエンド／サーバー | Next.js（App Router）+ TypeScript | フロントエンドとAPIを一体で構築でき、ハッカソン〜実証実験規模の開発速度に適する |
-| 地図表示 | MapLibre GL JS + 国土地理院タイル/OSM | オープンソースでライセンスコストがなく、GeoJSON（GISデータ由来）の重畳表示に適する |
-| DB | PostgreSQL + PostGIS拡張 | 位置情報（管轄自動判定、GISデータとの突合）を扱うため地理空間クエリが必要 |
-| ORM | Prisma（PostGIS拡張は生SQL/rawクエリ併用） | TypeScriptとの親和性、スキーマ管理のしやすさ |
-| 認証 | Auth.js（NextAuth）+ LINEプロバイダ | LINEログインを主とする方針（[03-external-integration.md](./03-external-integration.md)）に合致 |
-| ファイルストレージ | S3互換オブジェクトストレージ | 投稿写真・完了報告写真の保存 |
-| スコアリング処理 | Next.jsのScheduled Function／Cronジョブ（ホスティング環境依存） | 署名数・オープンデータ更新に応じた定期再計算 |
-| ホスティング（本番） | AWS（確定。具体構成は公開直前に検討） | まずはローカルで段階的に開発し、機能が固まった最後の段階でAWSへ乗せる方針。ローカル開発中はホスティングを意識せず進める |
-
-## 3. ロール・権限モデル
-
-- `citizen`：投稿・署名・自分の投稿の進捗閲覧（企業アカウントは設けない。理由は [00-concept.md](./00-concept.md) 4章）
-- `admin`（`reviewer` / `approver`）：[02-data-model.md](./02-data-model.md) の `ADMIN_ROLE.jurisdiction_scope` に基づき、担当管轄の提案のみ閲覧・ステータス変更可能（縦割りの壁を残さず横断的に見られる一方、権限は所管ごとに分離）
-
-## 4. 非機能要件との対応
-
-| 非機能要件（[01-requirements.md](./01-requirements.md)） | アーキテクチャ上の対応 |
+| ファイル | 役割 |
 | --- | --- |
-| 初期表示3秒以内 | Next.jsのサーバーコンポーネント＋地図タイルの遅延読み込み |
-| 署名の重複防止 | DB側で `(proposal_id, user_id)` にユニーク制約 |
-| ステータス変更履歴の保持 | `STATUS_HISTORY` テーブルへの書き込みをServer Action内でトランザクション化 |
-| 拡張性（対象エリア・データソース追加） | オープンデータ取り込み処理をアダプタパターンで実装し、自治体・データソース追加時に差し替え可能にする |
+| `enums.ts` | カテゴリ・ステータス等のリテラル型・ラベル・配色の単一の出典 |
+| `jurisdiction.ts` | 管轄自動判定(F9)のコアロジック |
+| `geo.ts` | 距離計算(haversine)・折れ線最短距離・種別優先度つき近傍探索 |
+| `scoring.ts` | 優先度スコア計算 |
+| `auth.ts` | 開発用スタブ認証のセッション取得 |
+| `mapStyle.ts` | 地図タイルのスタイル定義(関数形式) |
+| `tokyoWards.ts` | 東京23区の概略座標+全国地方公共団体コード |
+| `uploadPhoto.ts` | 写真アップロード(ローカル`public/uploads/`への保存) |
 
-## 5. ローカル開発の進め方（段階的）
+`app/prisma/ingest/`: 東京都オープンデータの取り込みスクリプト(`fetchParks.ts`、`seedAuthorities.ts`)。リクエスト処理には含めず、手動実行してDBにキャッシュする設計。
 
-公開・AWSへのデプロイは機能が完成した最後の段階で行う。ローカル開発中はホスティングを意識せず、以下の順で段階的に構築する。
+## ルーティング構成
 
-1. Next.jsプロジェクトの土台（App Router, TypeScript）
-2. Prismaスキーマ（[02-data-model.md](./02-data-model.md) 準拠）＋ローカルDB（SQLiteで開始し、後でPostgreSQLへ切り替え）
-3. 地図投稿・署名などコア画面（F1〜F4）
-4. 行政ダッシュボード（F6〜F7）とスコアリング（F8）
-5. 認証（LINEログイン）・外部データ連携の本接続
+Next.jsのroute groupsで、都民向け(`(citizen)`)と行政向け(`admin`)を分離。両者は見た目(配色・ヘッダー構成)を意図的に変えている:
 
-## 6. 要検証事項
+- 都民向け: 白背景+明るい緑(`#2f8f39`系)のアクセント。実在の通報プラットフォーム「My City Report」(東京都建設局採用)を参考にした配色。
+- 行政向け: slate/sky系の実務ツールらしい落ち着いたトーン(色数を増やさず、都民向けと同じ構造パターン(ユーティリティバー・ステータスバッジ等)だけを共有する)。
 
-- [ ] AWS本番構成の詳細（ECS/Fargate、Amplify Hosting、App Runner等の比較）— 着手は公開直前でよい
-- [ ] PostGIS対応のDB選定（AWS RDS for PostgreSQL + PostGIS想定）とローカルSQLiteからの移行手順
-- [ ] スコアリングバッチの実行頻度・処理時間の見積もり
+## デザインシステム
+
+- 角丸は控えめ(`rounded-sm`中心)。デジタル庁デザインシステムやe-Govポータルの実際のCSS(角丸0〜4px、ボーダー中心でシャドウをほぼ使わない)を参考にしている。
+- ステータス(`draft`〜`rejected`)は意味が伝わるセマンティックカラー(`globals.css`の`--color-status-*`)、カテゴリは全て同じ緑に統一し、区別はアイコン形状(`components/CategoryIcon.tsx`)で行う。
+- 共有コンポーネント: `StatusBadge`(ステータス表示)、`StatusStepper`(進捗ステップ表示)、`DeterminationBadge`(管轄判定の信頼度表示)、`ProposalCard`(一覧/カルーセル共通カード)、`PhotoGallery`(写真ギャラリー)。
+
+## 開発環境の起動
+
+```bash
+npm --prefix app run dev
+```
+
+初回セットアップ:
+
+```bash
+npm --prefix app install
+npm --prefix app run db:seed
+npm --prefix app run ingest:authorities
+npm --prefix app run ingest:parks
+```
+
+`ingest:parks`は東京都オープンデータカタログ・GSI APIへの実際のHTTPリクエストを伴うため、完了まで数分かかる(`MAX_GEOCODE_PER_WARD`環境変数で1回あたりのジオコーディング件数上限を調整可能。デフォルト40。冪等なので複数回実行すれば続きから取り込める)。
