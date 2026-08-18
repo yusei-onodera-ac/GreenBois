@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart LR
-    subgraph Client["クライアント（都民・企業）"]
+    subgraph Client["クライアント（都民）"]
         A[Webブラウザ / スマホ]
     end
     subgraph AdminClient["行政ダッシュボード"]
@@ -58,7 +58,7 @@ flowchart LR
 
 ## 3. ロール・権限モデル
 
-- `citizen` / `corporate`：投稿・署名・自分の投稿の進捗閲覧
+- `citizen`：投稿・署名・自分の投稿の進捗閲覧（企業アカウントは設けない。理由は [00-concept.md](./00-concept.md) 4章）
 - `admin`（`reviewer` / `approver`）：[02-data-model.md](./02-data-model.md) の `ADMIN_ROLE.jurisdiction_scope` に基づき、担当管轄の提案のみ閲覧・ステータス変更可能（縦割りの壁を残さず横断的に見られる一方、権限は所管ごとに分離）
 
 ## 4. 非機能要件との対応

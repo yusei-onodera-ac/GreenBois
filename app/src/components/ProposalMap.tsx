@@ -12,7 +12,7 @@ import {
   ProposalCategory,
   ProposalStatus,
 } from "@/lib/enums";
-import { GSI_MAP_STYLE } from "@/lib/mapStyle";
+import { OSM_MAP_STYLE } from "@/lib/mapStyle";
 
 export type MapProposal = {
   id: string;
@@ -46,7 +46,7 @@ function buildPopupNode(p: MapProposal, color: string) {
       <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>
         {PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}
       </div>
-      <Link href={`/proposals/${p.id}`} style={{ color: "#2563eb", fontSize: 13 }}>
+      <Link href={`/proposals/${p.id}`} prefetch={false} style={{ color: "#2563eb", fontSize: 13 }}>
         詳細を見る →
       </Link>
     </div>
@@ -69,7 +69,7 @@ export default function ProposalMap({ proposals }: { proposals: MapProposal[] })
 
     const map = new MaplibreMap({
       container: containerRef.current,
-      style: GSI_MAP_STYLE,
+      style: OSM_MAP_STYLE,
       center: [139.6688, 35.6438], // 世田谷区・太子堂付近(シードデータの中心)
       zoom: 12,
     });
@@ -164,7 +164,7 @@ export default function ProposalMap({ proposals }: { proposals: MapProposal[] })
   return (
     <div
       ref={containerRef}
-      className="w-full h-[280px] sm:h-[320px] rounded-2xl overflow-hidden border border-forest-200"
+      className="w-full h-[280px] sm:h-[320px] rounded-sm overflow-hidden border border-forest-200"
     />
   );
 }

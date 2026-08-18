@@ -3,14 +3,14 @@ import { prisma } from "@/lib/prisma";
 import ProposalMap from "@/components/ProposalMap";
 import AutoScrollCarousel from "@/components/AutoScrollCarousel";
 import ProposalThumb from "@/components/ProposalThumb";
+import ProposalCard from "@/components/ProposalCard";
+import CategoryIcon from "@/components/CategoryIcon";
+import { ChevronRightIcon, MailboxIcon, SignatureIcon, TrophyIcon, UsersIcon } from "@/components/icons";
 import {
   PROPOSAL_CATEGORIES,
   PROPOSAL_CATEGORY_LABELS,
   PROPOSAL_CATEGORY_COLOR,
-  PROPOSAL_CATEGORY_ICON,
-  PROPOSAL_STATUS_LABELS,
   ProposalCategory,
-  ProposalStatus,
 } from "@/lib/enums";
 
 export const dynamic = "force-dynamic";
@@ -22,64 +22,43 @@ function daysAgo(date: Date) {
   return `${Math.floor(diff / 30)}ヶ月前`;
 }
 
-type CardProposal = {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  signatureCount: number;
-  photoUrl?: string | null;
-};
-
-function ProposalCard({ p }: { p: CardProposal }) {
-  return (
-    <Link
-      href={`/proposals/${p.id}`}
-      className="block w-[calc(25%-0.75rem)] min-w-[220px] shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white hover:border-forest-400 hover:shadow-sm transition-all snap-start"
-    >
-      <ProposalThumb photoUrl={p.photoUrl} category={p.category} className="h-32 w-full" />
-      <div className="p-5">
-        <div className="flex items-center justify-between text-xs mb-2.5">
-          <span
-            className="rounded-full px-2 py-0.5 font-medium text-white"
-            style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[p.category as ProposalCategory] ?? "#6b7280" }}
-          >
-            {PROPOSAL_CATEGORY_ICON[p.category as ProposalCategory] ?? "📍"}
-          </span>
-          <span className="text-stone-500">{PROPOSAL_STATUS_LABELS[p.status as ProposalStatus] ?? p.status}</span>
-        </div>
-        <h3 className="font-semibold text-stone-900 mb-1.5 line-clamp-2 leading-snug">{p.title}</h3>
-        <p className="text-xs text-stone-500 line-clamp-2">{p.description}</p>
-        <div className="mt-3 text-xs text-stone-500">署名 {p.signatureCount}筆</div>
-      </div>
-    </Link>
-  );
-}
-
 function CarouselHeader({ title, moreHref }: { title: string; moreHref: string }) {
   return (
     <div className="flex items-center justify-between mb-3">
       <h2 className="font-display text-lg font-semibold text-forest-950">{title}</h2>
-      <Link href={moreHref} className="text-sm text-forest-700 hover:text-forest-900 font-medium transition-colors">
-        もっと見る →
+      <Link
+        href={moreHref}
+        className="inline-flex items-center gap-0.5 text-sm text-forest-700 hover:text-forest-900 font-medium transition-colors"
+      >
+        もっと見る
+        <ChevronRightIcon className="h-3.5 w-3.5" />
       </Link>
     </div>
   );
 }
 
-function StatBadge({ icon, value, unit, label }: { icon: string; value: string | number; unit: string; label: string }) {
+function StatTile({
+  icon,
+  value,
+  unit,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string | number;
+  unit: string;
+  label: string;
+}) {
   return (
-    <div className="flex items-center gap-4">
-      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-forest-100 text-3xl">
+    <div className="flex items-center gap-3 rounded-sm border border-forest-100 bg-forest-50/60 px-4 py-3.5">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-forest-700 text-forest-50">
         {icon}
       </span>
       <div>
         <div className="flex items-baseline gap-1">
-          <span className="font-display text-3xl font-bold text-clay-600">{value}</span>
-          <span className="text-sm font-semibold text-stone-500">{unit}</span>
+          <span className="font-display text-2xl font-bold text-forest-900">{value}</span>
+          <span className="text-xs font-semibold text-slate-500">{unit}</span>
         </div>
-        <p className="text-xs text-stone-500 mt-0.5">{label}</p>
+        <span className="text-xs text-slate-500">{label}</span>
       </div>
     </div>
   );
@@ -114,7 +93,7 @@ export default async function MapPage() {
       take: 10,
     }),
     prisma.proposal.count({ where: { status: "completed" } }),
-    prisma.user.count({ where: { userType: { not: "admin" } } }),
+    prisma.user.count({ where: { userType: "citizen" } }),
   ]);
 
   const totalSignatures = proposals.reduce((sum, p) => sum + p.signatures.length, 0);
@@ -122,13 +101,9 @@ export default async function MapPage() {
   return (
     <div>
       {/* --- ヒーロー --- */}
-      <section className="relative overflow-hidden bg-forest-900">
-        <span className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-forest-800" />
-        <span className="pointer-events-none absolute -right-4 top-20 h-40 w-40 rounded-full bg-forest-700/70" />
-        <span className="pointer-events-none absolute -left-20 bottom-[-4rem] h-56 w-56 rounded-full bg-forest-800" />
-
-        <div className="relative mx-auto max-w-6xl px-5 pt-12 pb-10">
-          <p className="text-clay-400 text-xs font-semibold tracking-widest">GREENVOICE TOKYO</p>
+      <section className="bg-forest-900">
+        <div className="mx-auto max-w-6xl px-5 pt-12 pb-10">
+          <p className="text-forest-300 text-xs font-semibold tracking-widest">GREENVOICE TOKYO</p>
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-white mt-2 leading-tight max-w-xl">
             まちの「みどり」を、
             <br />
@@ -140,13 +115,13 @@ export default async function MapPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/proposals/new"
-              className="rounded-full bg-clay-500 text-white text-sm font-semibold px-6 py-3 hover:bg-clay-600 transition-colors"
+              className="rounded-sm bg-white text-forest-900 text-sm font-semibold px-6 py-3 hover:bg-forest-100 transition-colors"
             >
               + 提案してみる
             </Link>
             <a
               href="#realized"
-              className="rounded-full border border-forest-400 text-forest-100 text-sm font-semibold px-6 py-3 hover:bg-forest-800 transition-colors"
+              className="rounded-sm border border-forest-400 text-forest-100 text-sm font-semibold px-6 py-3 hover:bg-forest-800 transition-colors"
             >
               実現した事例を見る
             </a>
@@ -155,24 +130,35 @@ export default async function MapPage() {
       </section>
 
       {/* --- 数字で見るGreenVoice --- */}
-      <section className="bg-white border-b border-stone-100">
-        <div className="mx-auto max-w-6xl px-5 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
-          <StatBadge icon="📮" value={proposals.length} unit="件" label="投稿された提案" />
-          <StatBadge icon="✍️" value={totalSignatures} unit="筆" label="集まった署名" />
-          <StatBadge icon="🎉" value={realizedCount} unit="件" label="実現した提案" />
-          <StatBadge icon="🧑‍🤝‍🧑" value={userCount} unit="人" label="参加している都民・企業" />
+      <section className="bg-white border-b border-slate-200">
+        <div className="mx-auto max-w-6xl px-5 py-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatTile icon={<MailboxIcon className="h-4.5 w-4.5" />} value={proposals.length} unit="件" label="投稿された提案" />
+          <StatTile icon={<SignatureIcon className="h-4.5 w-4.5" />} value={totalSignatures} unit="筆" label="集まった署名" />
+          <StatTile icon={<TrophyIcon className="h-4.5 w-4.5" />} value={realizedCount} unit="件" label="実現した提案" />
+          <StatTile icon={<UsersIcon className="h-4.5 w-4.5" />} value={userCount} unit="人" label="参加している都民" />
         </div>
       </section>
 
       {/* --- 実現しました(自動スクロール・ループ) --- */}
       <section id="realized" className="bg-forest-50 border-y border-forest-100 py-8 scroll-mt-4">
         <div className="mx-auto max-w-6xl px-5">
-          <p className="text-clay-600 text-xs font-semibold tracking-wide">REALIZED</p>
-          <h2 className="font-display text-xl font-semibold text-forest-950 mt-1 mb-4">
-            このアプリから、実際に実現しました
-          </h2>
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <p className="text-clay-600 text-xs font-semibold tracking-wide">REALIZED</p>
+              <h2 className="font-display text-xl font-semibold text-forest-950 mt-1">
+                このアプリから、実際に実現しました
+              </h2>
+            </div>
+            <Link
+              href="/proposals?status=completed"
+              className="inline-flex items-center gap-0.5 text-sm text-forest-700 hover:text-forest-900 font-medium transition-colors shrink-0"
+            >
+              もっと見る
+              <ChevronRightIcon className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           {realized.length === 0 ? (
-            <p className="text-stone-500 text-sm max-w-xl">
+            <p className="text-slate-500 text-sm max-w-xl">
               まだ実現した提案はありません。あなたの一声が、その最初の1件になるかもしれません。
             </p>
           ) : (
@@ -181,15 +167,16 @@ export default async function MapPage() {
                 <Link
                   key={p.id}
                   href={`/proposals/${p.id}`}
-                  className="block w-72 overflow-hidden rounded-xl bg-white border border-forest-200 shadow-sm hover:shadow transition-shadow"
+                  prefetch={false}
+                  className="block w-72 overflow-hidden rounded-sm bg-white border border-slate-200 hover:border-forest-400 transition-colors"
                 >
                   <ProposalThumb photoUrl={p.attachments[0]?.url} category={p.category} className="h-32 w-full" />
                   <div className="border-l-4 border-l-clay-500 p-4">
                     <div className="flex items-center gap-1.5 text-clay-600 text-xs font-semibold">
-                      <span>🎉</span> 実現しました
+                      <TrophyIcon className="h-3.5 w-3.5" /> 実現しました
                     </div>
                     <h3 className="text-forest-950 font-medium mt-1.5 leading-snug line-clamp-2">{p.title}</h3>
-                    <p className="text-stone-500 text-xs mt-2">
+                    <p className="text-slate-500 text-xs mt-2">
                       {PROPOSAL_CATEGORY_LABELS[p.category as ProposalCategory] ?? p.category}
                       {p.statusHistory[0] && ` ・ ${daysAgo(p.statusHistory[0].changedAt)}に実現`}
                     </p>
@@ -206,12 +193,13 @@ export default async function MapPage() {
         <section>
           <CarouselHeader title="署名が多い提案" moreHref="/proposals?sort=signatures" />
           {bySignatures.length === 0 ? (
-            <p className="text-stone-500 text-sm">まだ提案がありません。</p>
+            <p className="text-slate-500 text-sm">まだ提案がありません。</p>
           ) : (
             <div className="gv-scroll flex gap-4 overflow-x-auto pb-3 snap-x snap-proximity">
               {bySignatures.map((p) => (
                 <ProposalCard
                   key={p.id}
+                  variant="carousel"
                   p={{ ...p, signatureCount: p.signatures.length, photoUrl: p.attachments[0]?.url }}
                 />
               ))}
@@ -223,12 +211,13 @@ export default async function MapPage() {
         <section>
           <CarouselHeader title="新着の提案" moreHref="/proposals?sort=new" />
           {byNew.length === 0 ? (
-            <p className="text-stone-500 text-sm">まだ提案がありません。</p>
+            <p className="text-slate-500 text-sm">まだ提案がありません。</p>
           ) : (
             <div className="gv-scroll flex gap-4 overflow-x-auto pb-3 snap-x snap-proximity">
               {byNew.map((p) => (
                 <ProposalCard
                   key={p.id}
+                  variant="carousel"
                   p={{ ...p, signatureCount: p.signatures.length, photoUrl: p.attachments[0]?.url }}
                 />
               ))}
@@ -238,7 +227,7 @@ export default async function MapPage() {
 
         {/* --- 地図から探す(補助的な閲覧手段。一覧が主) --- */}
         <section>
-          <h2 className="text-sm font-semibold text-stone-500 mb-2">地図から探す</h2>
+          <h2 className="text-sm font-semibold text-slate-500 mb-2">地図から探す</h2>
           <ProposalMap
             proposals={proposals.map((p) => ({
               id: p.id,
@@ -249,14 +238,15 @@ export default async function MapPage() {
               status: p.status,
             }))}
           />
-          <div className="mt-3 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap gap-2">
             {PROPOSAL_CATEGORIES.map((c) => (
-              <span key={c} className="inline-flex items-center gap-1.5 text-xs text-stone-500">
-                <span
-                  className="inline-block h-3 w-3 rounded-full"
-                  style={{ backgroundColor: PROPOSAL_CATEGORY_COLOR[c] }}
-                />
-                {PROPOSAL_CATEGORY_ICON[c]} {PROPOSAL_CATEGORY_LABELS[c]}
+              <span
+                key={c}
+                className="inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-xs font-medium"
+                style={{ borderColor: `${PROPOSAL_CATEGORY_COLOR[c]}33`, color: PROPOSAL_CATEGORY_COLOR[c] }}
+              >
+                <CategoryIcon category={c} className="h-3.5 w-3.5" />
+                {PROPOSAL_CATEGORY_LABELS[c]}
               </span>
             ))}
           </div>

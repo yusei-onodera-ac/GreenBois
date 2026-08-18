@@ -2,7 +2,9 @@
 // SQLiteはPrismaネイティブenumを未サポートのため、String型カラム+ここでの
 // リテラル型定義で型安全性を担保する(docs/02-data-model.md 準拠)。
 
-export const USER_TYPES = ["citizen", "corporate", "admin"] as const;
+// 都民のみが利用できるサービス(私有地・企業敷地への行政補助金交付は法的に不可能なため、
+// 企業アカウントは設けない。企業の関わり方は docs/07-impact-and-policy.md 3.2/3.4節参照)。
+export const USER_TYPES = ["citizen", "admin"] as const;
 export type UserType = (typeof USER_TYPES)[number];
 
 // 「種類が細かすぎる/重複している」というフィードバックを受け、原案(docs/00-concept.md)の
@@ -36,13 +38,7 @@ export const PROPOSAL_CATEGORY_COLOR: Record<ProposalCategory, string> = {
   other: "#6b7280", // グレー
 };
 
-export const PROPOSAL_CATEGORY_ICON: Record<ProposalCategory, string> = {
-  park_facility: "🪑",
-  greening: "🌳",
-  private_greening: "🏢",
-  tree_care: "✂️",
-  other: "📍",
-};
+// カテゴリごとのアイコンは src/components/CategoryIcon.tsx(SVG)を使う。
 
 export const LAND_TYPES = ["public_metro", "public_ward", "private", "unknown"] as const;
 export type LandType = (typeof LAND_TYPES)[number];
@@ -74,6 +70,28 @@ export const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {
   completed: "完了",
   rejected: "却下",
 };
+
+// ステータスバッジ・ステッパーの配色(globals.css の --color-status-* と対応)。
+// カテゴリ色とは別軸で、「申請ステータス」として一目で意味が伝わる配色にする。
+export const PROPOSAL_STATUS_COLOR: Record<ProposalStatus, { fg: string; bg: string }> = {
+  draft: { fg: "var(--color-status-draft)", bg: "var(--color-status-draft-bg)" },
+  collecting: { fg: "var(--color-status-collecting)", bg: "var(--color-status-collecting-bg)" },
+  screening: { fg: "var(--color-status-screening)", bg: "var(--color-status-screening-bg)" },
+  adopted: { fg: "var(--color-status-adopted)", bg: "var(--color-status-adopted-bg)" },
+  in_progress: { fg: "var(--color-status-in_progress)", bg: "var(--color-status-in_progress-bg)" },
+  completed: { fg: "var(--color-status-completed)", bg: "var(--color-status-completed-bg)" },
+  rejected: { fg: "var(--color-status-rejected)", bg: "var(--color-status-rejected-bg)" },
+};
+
+// StatusStepper の主経路(却下は経路の外にある終端状態として別途表示する)。
+export const PROPOSAL_STATUS_MAIN_PATH: ProposalStatus[] = [
+  "draft",
+  "collecting",
+  "screening",
+  "adopted",
+  "in_progress",
+  "completed",
+];
 
 // ステータス遷移の許可リスト(F7: 行政ダッシュボードでの変更操作に使用)
 export const STATUS_TRANSITIONS: Record<ProposalStatus, ProposalStatus[]> = {

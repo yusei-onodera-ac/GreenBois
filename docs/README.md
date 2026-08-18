@@ -12,6 +12,8 @@
 6. [05-roadmap.md](./05-roadmap.md) — ロードマップと各フェーズの完了条件
 7. [presentation/GreenVoice_TOKYO.pptx](./presentation/GreenVoice_TOKYO.pptx) — 上記をまとめたプレゼン資料(pptx、全19枚)
 8. [06-presentation-outline.md](./06-presentation-outline.md) — プレゼン資料のテキスト版アウトライン(バックアップ・他ツールでの再生成用)
+9. [07-impact-and-policy.md](./07-impact-and-policy.md) — 期待される効果（都民の生活・行政双方へのメリット）と、行政制度への具体的な提言。外部エビデンス（学術研究・政府統計・先行事例）付き
+10. [08-admin-data-flow.md](./08-admin-data-flow.md) — 行政向けページ（`/admin`）に実際どの情報が渡るかのフィールド単位の仕様
 
 ## 現在のステータス
 

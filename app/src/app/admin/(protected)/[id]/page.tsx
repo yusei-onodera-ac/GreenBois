@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
 import { changeStatus } from "./actions";
+import PhotoGallery from "@/components/PhotoGallery";
+import StatusBadge from "@/components/StatusBadge";
+import StatusStepper from "@/components/StatusStepper";
+import DeterminationBadge from "@/components/DeterminationBadge";
 import {
   PROPOSAL_CATEGORY_LABELS,
   PROPOSAL_STATUS_LABELS,
@@ -15,31 +18,40 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// 認証・権限チェックは親の admin/(protected)/layout.tsx で行っているため、
+// ここに到達する時点で user は行政職員アカウントであることが保証されている。
 export default async function AdminProposalDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getCurrentUser();
-  if (!user) redirect("/dev-login");
-  if (user.userType !== "admin") {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-10 text-center text-stone-600">
-        このページは行政職員アカウントのみ閲覧できます。
-      </div>
-    );
-  }
 
+  // 情報フローは docs/08-admin-data-flow.md 参照。行政向けは本名まで見せる一方、
+  // 署名者個人の情報は(都民・行政どちらにも)一切渡さないよう select で絞り込む。
   const proposal = await prisma.proposal.findUnique({
     where: { id },
     include: {
-      user: true,
-      signatures: true,
+      user: { select: { displayName: true, handle: true } },
+      signatures: { select: { id: true } },
       jurisdiction: true,
       score: true,
-      statusHistory: { include: { changedByUser: true }, orderBy: { changedAt: "asc" } },
+      statusHistory: {
+        select: {
+          id: true,
+          fromStatus: true,
+          toStatus: true,
+          changedAt: true,
+          changedByUser: { select: { displayName: true } },
+        },
+        orderBy: { changedAt: "asc" },
+      },
       greenAgreement: true,
+      attachments: true,
+      notificationLogs: {
+        include: { authority: { select: { name: true, category: true, ward: true, contactEmail: true } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!proposal) notFound();
@@ -52,13 +64,15 @@ export default async function AdminProposalDetailPage({
         ← ダッシュボードに戻る
       </Link>
 
+      <div className="mt-4">
+        <PhotoGallery photos={proposal.attachments} category={proposal.category} />
+      </div>
+
       <div className="mt-4 flex items-center gap-2 text-xs">
-        <span className="rounded-full bg-forest-100 text-forest-800 px-2 py-0.5 font-medium">
+        <span className="rounded-sm bg-forest-100 text-forest-800 px-2 py-0.5 font-medium">
           {PROPOSAL_CATEGORY_LABELS[proposal.category as ProposalCategory] ?? proposal.category}
         </span>
-        <span className="rounded-full bg-stone-100 text-stone-700 px-2 py-0.5 font-medium">
-          {PROPOSAL_STATUS_LABELS[proposal.status as ProposalStatus] ?? proposal.status}
-        </span>
+        <StatusBadge status={proposal.status} />
         <span className="text-stone-500">
           {LAND_TYPE_LABELS[proposal.landType as LandType] ?? proposal.landType}
         </span>
@@ -73,8 +87,9 @@ export default async function AdminProposalDetailPage({
       <p className="mt-4 text-stone-800 whitespace-pre-wrap">{proposal.description}</p>
 
       {proposal.jurisdiction && (
-        <p className="mt-2 text-sm text-stone-500">
-          所管: {proposal.jurisdiction.authorityName}(判定方法: {proposal.jurisdiction.determinationMethod})
+        <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-500">
+          所管: {proposal.jurisdiction.authorityName}
+          <DeterminationBadge method={proposal.jurisdiction.determinationMethod} />
         </p>
       )}
 
@@ -86,19 +101,19 @@ export default async function AdminProposalDetailPage({
       )}
 
       <div className="mt-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 text-center">
+        <div className="rounded-sm border border-stone-200 bg-white p-4 text-center">
           <div className="text-2xl font-bold text-forest-800">
             {proposal.score?.totalScore.toFixed(1) ?? "-"}
           </div>
           <div className="text-xs text-stone-500">優先度スコア</div>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 text-center">
+        <div className="rounded-sm border border-stone-200 bg-white p-4 text-center">
           <div className="text-2xl font-bold text-stone-700">
             {proposal.signatures.length} / {proposal.signatureTarget}
           </div>
           <div className="text-xs text-stone-500">署名数</div>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 text-center">
+        <div className="rounded-sm border border-stone-200 bg-white p-4 text-center">
           <div className="text-2xl font-bold text-stone-700">
             {proposal.score?.openDataScore.toFixed(1) ?? "-"}
           </div>
@@ -106,7 +121,41 @@ export default async function AdminProposalDetailPage({
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-forest-200 bg-forest-50 p-5">
+      <div className="mt-6 rounded-sm border border-stone-200 bg-white p-5">
+        <h2 className="font-semibold text-stone-900 mb-4">進捗状況</h2>
+        <StatusStepper status={proposal.status} />
+      </div>
+
+      {/* 「将来、管轄先へ自動でメール送信したい」の土台。実送信(SMTP等)は未実装のため、
+          誰宛に何を送る予定かのログを表示するのみ(送信ボタンは置かない)。 */}
+      <div className="mt-6 rounded-sm border border-stone-200 bg-white p-5">
+        <h2 className="font-semibold text-stone-900 mb-1">送信予定(通知ログ)</h2>
+        <p className="text-xs text-stone-400 mb-3">
+          実際のメール送信は未実装です。ここには「本来なら誰に通知するか」の記録のみ表示しています。
+        </p>
+        {proposal.notificationLogs.length === 0 ? (
+          <p className="text-sm text-stone-500">送信予定はありません(管轄が未確定のため)。</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {proposal.notificationLogs.map((log) => (
+              <li key={log.id} className="flex flex-wrap items-center gap-2 text-stone-700">
+                <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
+                  {log.status === "planned" ? "送信予定" : log.status}
+                </span>
+                <span>{log.authority?.name ?? "(宛先未確定)"}</span>
+                {log.authority?.contactEmail && (
+                  <span className="text-stone-400 text-xs">({log.authority.contactEmail})</span>
+                )}
+                <span className="text-stone-400 text-xs ml-auto">
+                  {new Date(log.createdAt).toLocaleString("ja-JP")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-6 rounded-sm border border-forest-200 bg-forest-50 p-5">
         <h2 className="font-semibold text-forest-900 mb-3">ステータス変更</h2>
         {nextStatuses.length === 0 ? (
           <p className="text-sm text-stone-500">これ以上のステータス変更はできません(終端状態)。</p>
@@ -119,7 +168,7 @@ export default async function AdminProposalDetailPage({
                 type="submit"
                 name="toStatus"
                 value={s}
-                className="rounded-full bg-forest-700 text-white text-sm font-medium px-4 py-2 hover:bg-forest-800"
+                className="rounded-sm bg-forest-700 text-white text-sm font-medium px-4 py-2 hover:bg-forest-800"
               >
                 「{PROPOSAL_STATUS_LABELS[s]}」に変更
               </button>
@@ -128,7 +177,7 @@ export default async function AdminProposalDetailPage({
         )}
       </div>
 
-      <div className="mt-6 rounded-xl border border-stone-200 bg-white p-5">
+      <div className="mt-6 rounded-sm border border-stone-200 bg-white p-5">
         <h2 className="font-semibold text-stone-900 mb-3">進捗履歴</h2>
         <ol className="space-y-2 text-sm">
           {proposal.statusHistory.map((h) => (

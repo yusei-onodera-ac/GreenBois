@@ -16,6 +16,7 @@
 | 参加型予算・住民参加の制度設計 | Decidim（OSS）などの先行プラットフォーム事例（世田谷区） | 直接連携はしないが、UI/ワークフロー設計の参考事例として利用 | [世田谷区 Decidim活用事例](https://www.city.setagaya.lg.jp/02005/6003.html) |
 | 地図タイル | 国土地理院地図タイル（標準地図） | **実データ連携・実装済み**（APIキー不要、`src/lib/mapStyle.ts`） | [国土地理院 開発者向け情報](https://maps.gsi.go.jp/development/ichiran.html) |
 | 住所・地名検索（ジオコーディング） | 国土地理院 住所検索API | **実データ連携・実装済み**（APIキー不要、`src/components/LocationPicker.tsx`の住所/キーワード検索） | [国土地理院 住所検索API](https://msearch.gsi.go.jp/address-search/AddressSearch) |
+| 逆ジオコーディング（緯度経度→住所） | 国土地理院 逆ジオコーディングAPI | **実データ連携・実装済み**（APIキー不要。ピン選択時に住所ラベルを表示、`src/components/LocationPicker.tsx`。市区町村コード→区名の変換テーブルは東京23区分のみ自前で保持） | [国土地理院 逆ジオコーディングAPI](https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress) |
 | 地図フォントグリフ（クラスタ件数表示等） | OpenMapTiles Fonts | **実データ連携・実装済み**（無償公開CDN、APIキー不要） | `https://fonts.openmaptiles.org/{fontstack}/{range}.pbf` |
 
 ## 2. モック／実データの判断基準

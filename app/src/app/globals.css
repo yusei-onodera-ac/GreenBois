@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf9f6;
+  --background: #f8f9fa;
   --foreground: #1c2620;
 
   /* 指定フォントスタック：ヒラギノ角ゴ / メイリオ / MS-Pゴシック / Noto Sans / sans-serif */
@@ -27,6 +27,26 @@
   --color-clay-500: #e07a5f;
   --color-clay-400: #e89a85;
   --color-clay-100: #fbe9e3;
+
+  /* ステータス用セマンティックカラー(カテゴリ色とは別軸)。
+     行政手続きの「申請ステータス」表示によくある配色に寄せる
+     (draft=グレー / collecting=青 / screening=琥珀 / adopted=青緑 /
+      in_progress=紫 / completed=緑(forest) / rejected=赤)。
+     src/lib/enums.ts の PROPOSAL_STATUS_COLOR から参照する。 */
+  --color-status-draft: #64748b;
+  --color-status-draft-bg: #f1f5f9;
+  --color-status-collecting: #2563eb;
+  --color-status-collecting-bg: #eff6ff;
+  --color-status-screening: #b45309;
+  --color-status-screening-bg: #fffbeb;
+  --color-status-adopted: #0f766e;
+  --color-status-adopted-bg: #f0fdfa;
+  --color-status-in_progress: #6d28d9;
+  --color-status-in_progress-bg: #f5f3ff;
+  --color-status-completed: #204b39;
+  --color-status-completed-bg: #e9f6ef;
+  --color-status-rejected: #b91c1c;
+  --color-status-rejected-bg: #fef2f2;
 }
 
 @theme inline {

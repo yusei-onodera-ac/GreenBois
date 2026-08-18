@@ -5,7 +5,6 @@ import { UserType } from "@/lib/enums";
 // (docs/01-requirements.md の非機能要件「データ保護」に対応)。
 const LABEL: Record<UserType, string> = {
   citizen: "都民",
-  corporate: "企業",
   admin: "行政職員",
 };
 

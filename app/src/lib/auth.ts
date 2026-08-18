@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
@@ -6,7 +7,9 @@ import { prisma } from "@/lib/prisma";
 // ローカル開発フェーズでは Cookie にユーザーIDを保存する簡易ログインで代替する。
 const COOKIE_NAME = "gv_user_id";
 
-export async function getCurrentUser() {
+// admin/layout.tsx と admin/page.tsx など、1リクエスト内で複数箇所から
+// 呼ばれることがあるため cache() でラップし、DBクエリの重複実行を防ぐ。
+export const getCurrentUser = cache(async () => {
   const cookieStore = await cookies();
   const userId = cookieStore.get(COOKIE_NAME)?.value;
   if (!userId) return null;
@@ -16,7 +19,7 @@ export async function getCurrentUser() {
     include: { adminRole: true },
   });
   return user;
-}
+});
 
 export async function requireUser() {
   const user = await getCurrentUser();
