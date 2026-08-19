@@ -11,10 +11,10 @@ const DEFAULT_CENTER: [number, number] = [139.6688, 35.6438];
 
 // ピン位置がこの範囲内にsitesの施設・道路を見つけたら、区・施設名欄を自動入力する
 // (検索・クリック・ドラッグいずれの操作でも一貫して働く)。
-// 以前は200mだったが、誤差の許容度が高すぎて離れた場所でも施設に判定されてしまう
-// (かつ道路が密な公園データに埋もれる)問題があったため80mに縮小し、
-// 種別優先度つきの判定(pickNearestByPriority、src/lib/geo.ts)に切り替えた。
-const SITE_AUTO_MATCH_RADIUS_M = 80;
+// 以前は200m→80mと縮小してきたが、80mでも「施設のすぐ近くの道路」を指したつもりが
+// 施設側に判定されてしまい、「公道として投稿」の選択肢が出せない問題が起きていた。
+// そのため15m(ほぼピンポイントで施設に重ねないと一致しない距離)まで縮小した。
+const SITE_AUTO_MATCH_RADIUS_M = 15;
 // 住所検索(GSI・全国対応)の結果は東京都内に限定する(他県の同名住所が混ざるのを防ぐ)。
 const TOKYO_PREFIX = "東京都";
 
@@ -48,6 +48,7 @@ export default function LocationPicker({
   sites = [],
   onLandTypeResolved,
   onWardResolved,
+  onRoadFallbackResolved,
 }: {
   value: { lat: number; lng: number };
   onChange: (pos: { lat: number; lng: number }) => void;
@@ -59,6 +60,11 @@ export default function LocationPicker({
   // ピンの位置が決まるたびにGSI逆ジオコーディングで取得する区名を呼び出し元へ渡す
   // (F9本格版の管轄自動判定で「どの区か」を使うため。src/lib/jurisdiction.ts参照)。
   onWardResolved?: (ward: string | null) => void;
+  // 「この場所を公道として投稿する」を都民が選んだかどうか。
+  // 近くにPublicSiteが無く道路名を特定できない場合でも、住所(区)さえわかれば
+  // 区の道路担当へルーティングできるため、都民自身に「公道」と申告してもらう
+  // (src/lib/jurisdiction.tsのroadHint)。
+  onRoadFallbackResolved?: (isRoad: boolean) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MaplibreMap | null>(null);
@@ -68,6 +74,7 @@ export default function LocationPicker({
   const onChangeRef = useRef(onChange);
   const onWardResolvedRef = useRef(onWardResolved);
   const onLandTypeResolvedRef = useRef(onLandTypeResolved);
+  const onRoadFallbackResolvedRef = useRef(onRoadFallbackResolved);
   const sitesRef = useRef(sites);
 
   const [query, setQuery] = useState("");
@@ -82,6 +89,12 @@ export default function LocationPicker({
   // マップ下に「現在ピンが指している施設」として常に見える形で表示する。
   const [matchedSite, setMatchedSite] = useState<PublicSite | null>(null);
   const [matchAttempted, setMatchAttempted] = useState(false);
+  // GSI逆ジオコーディングで取得した表示用の住所(区+町丁目)。PublicSite一致が無い場合の
+  // 「公道として投稿」ボタンに、今どこを指しているかを見せるために保持する。
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
+  // 「この場所を公道として投稿する」が選ばれているか。ピンが動くたびにリセットする
+  // (位置が変わったら都民に改めて意思表示してもらうため)。
+  const [roadFallback, setRoadFallback] = useState(false);
   // 既定は地名・施設名ラベルが見やすいOSM地図。GSIの航空写真(衛星写真相当)にも切り替えられる。
   const [mapMode, setMapMode] = useState<"map" | "photo">("map");
   const wardSites = useMemo(
@@ -104,6 +117,10 @@ export default function LocationPicker({
   useEffect(() => {
     onLandTypeResolvedRef.current = onLandTypeResolved;
   }, [onLandTypeResolved]);
+
+  useEffect(() => {
+    onRoadFallbackResolvedRef.current = onRoadFallbackResolved;
+  }, [onRoadFallbackResolved]);
 
   useEffect(() => {
     sitesRef.current = sites;
@@ -144,6 +161,11 @@ export default function LocationPicker({
     const nearby = findNearbySite(lat, lng);
     setMatchedSite(nearby);
     setMatchAttempted(true);
+    setResolvedAddress(null);
+    // ピンが動いたら「公道として投稿する」の意思表示は一旦リセットする
+    // (新しい位置に対して改めて選び直してもらう)。
+    setRoadFallback(false);
+    onRoadFallbackResolvedRef.current?.(false);
     if (nearby) {
       setSelectedWard(nearby.ward);
       setSiteQuery(nearby.name);
@@ -174,8 +196,10 @@ export default function LocationPicker({
       if (requestId !== addressRequestIdRef.current) return; // 新しいリクエストが走っていれば結果を捨てる
       if (data.results) {
         const ward = MUNI_CD_TO_WARD[data.results.muniCd] ?? "";
-        popup.setHTML(buildPopupHtml(nearby, `${ward}${data.results.lv01Nm}`));
+        const addressLine = `${ward}${data.results.lv01Nm}`;
+        popup.setHTML(buildPopupHtml(nearby, addressLine));
         onWardResolvedRef.current?.(ward || null);
+        setResolvedAddress(ward ? addressLine : null);
       } else {
         popup.setHTML(buildPopupHtml(nearby, nearby ? null : "住所を取得できませんでした"));
         onWardResolvedRef.current?.(null);
@@ -245,6 +269,15 @@ export default function LocationPicker({
     setSiteQuery(site.name);
     moveTo(site.lat, site.lng);
     onLandTypeResolvedRef.current?.(site.landType);
+  }
+
+  // 近くにPublicSiteが見つからなくても、住所(区)さえわかれば「公道」として
+  // 投稿を許可する。都道/区道の区別は問わず、区の道路担当へルーティングされる
+  // (src/lib/jurisdiction.tsのroadHint)。
+  function useAsPublicRoad() {
+    setRoadFallback(true);
+    onLandTypeResolvedRef.current?.("public_ward");
+    onRoadFallbackResolvedRef.current?.(true);
   }
 
   function handleWardSelect(name: string) {
@@ -435,7 +468,7 @@ export default function LocationPicker({
       {sites.length > 0 && matchAttempted && (
         <div
           className={`mt-2 rounded-sm border px-3 py-2 text-sm ${
-            matchedSite
+            matchedSite || roadFallback
               ? "border-forest-200 bg-forest-50 text-forest-900"
               : "border-amber-200 bg-amber-50 text-amber-800"
           }`}
@@ -445,8 +478,31 @@ export default function LocationPicker({
               このピンの施設: <span className="font-semibold">{matchedSite.name}</span>
               <span className="text-forest-600"> ({matchedSite.ward})</span>
             </>
+          ) : roadFallback ? (
+            <>
+              公道として投稿します
+              {resolvedAddress && <span className="text-forest-600"> ({resolvedAddress})</span>}
+            </>
           ) : (
-            "このピンの位置に対象の施設・道路が見つかりませんでした。近くの公園・図書館・道路のあたりを指してください。"
+            <div className="space-y-2">
+              <p>このピンの位置に対象の公園・図書館・道路が見つかりませんでした。</p>
+              {resolvedAddress ? (
+                <>
+                  <p className="text-amber-700">
+                    住所は取得できています({resolvedAddress})。道路名が特定できなくても、この住所の「公道」として投稿できます。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={useAsPublicRoad}
+                    className="rounded-sm bg-forest-700 text-white text-xs font-medium px-3 py-1.5 hover:bg-forest-800"
+                  >
+                    この場所を公道として投稿する
+                  </button>
+                </>
+              ) : (
+                <p>近くの公園・図書館・道路のあたりを指すか、住所が取得できるまでお待ちください。</p>
+              )}
+            </div>
           )}
         </div>
       )}

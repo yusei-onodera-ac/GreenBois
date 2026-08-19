@@ -68,7 +68,7 @@ export default async function ProposalListPage({
             href="/map"
             className="inline-flex items-center gap-1 text-sm text-forest-700 hover:text-forest-900 transition-colors"
           >
-            ← マップに戻る
+            ← HOMEに戻る
           </Link>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-forest-950 mt-3">
             {showCompletedOnly ? "実現した提案" : SORT_TITLES[activeSort]}

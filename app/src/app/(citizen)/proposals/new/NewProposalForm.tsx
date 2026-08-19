@@ -32,6 +32,9 @@ export default function NewProposalForm({ sites }: { sites: PublicSite[] }) {
   const [category, setCategory] = useState<ProposalCategory>("park_facility");
   const [landType, setLandType] = useState<string | null>(null);
   const [ward, setWard] = useState<string | null>(null);
+  // 「この場所を公道として投稿する」が選ばれているか(LocationPicker.tsx参照)。
+  // 近くにPublicSiteが無くても、都民自身の申告で道路担当へルーティングできるようにする。
+  const [isRoadFallback, setIsRoadFallback] = useState(false);
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -186,6 +189,7 @@ export default function NewProposalForm({ sites }: { sites: PublicSite[] }) {
             sites={sites}
             onLandTypeResolved={setLandType}
             onWardResolved={setWard}
+            onRoadFallbackResolved={setIsRoadFallback}
           />
           <input type="hidden" name="lat" value={pos.lat} />
           <input type="hidden" name="lng" value={pos.lng} />
@@ -193,6 +197,9 @@ export default function NewProposalForm({ sites }: { sites: PublicSite[] }) {
           {/* F9本格版:管轄自動判定(施設/道路の近傍一致→区フォールバック)に使う。
               GSI逆ジオコーディングで自動取得されるため通常は入力不要。 */}
           <input type="hidden" name="ward" value={ward ?? ""} />
+          {/* 「公道として投稿する」が選ばれた場合のみ"true"。区フォールバック時に
+              公園ではなく道路担当を選ぶためのヒント(src/lib/jurisdiction.ts)。 */}
+          <input type="hidden" name="isRoadFallback" value={isRoadFallback ? "true" : ""} />
           <p className="text-xs text-slate-400 mt-1">
             現在、新規のご提案は公園・図書館・道路など、都・区市町村が管理する公有地を対象としています。
           </p>

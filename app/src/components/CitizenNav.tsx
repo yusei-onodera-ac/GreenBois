@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
-  { href: "/map", label: "マップ" },
-  { href: "/proposals", label: "提案一覧" },
+  { href: "/map", label: "HOME" },
+  { href: "/proposals", label: "みんなの声" },
   { href: "/mypage", label: "マイページ" },
 ] as const;
 

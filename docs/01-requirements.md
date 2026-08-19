@@ -26,11 +26,11 @@
 | 機能 | 画面 | 補足 |
 | --- | --- | --- |
 | ログイン(開発用スタブ) | `/admin/login` | 都民向けログインとは別画面 |
-| ダッシュボード | `/admin` | 優先度スコア(署名スコア+オープンデータスコア)順の一覧。管轄・判定方法バッジも表示 |
-| 提案詳細 | `/admin/[id]` | 本名・優先度スコア内訳・進捗ステッパー・送信予定(通知ログ)を表示、ステータス変更操作 |
-| ステータス変更 | `changeStatus`アクション | `STATUS_TRANSITIONS`で許可された遷移のみ実行可能 |
+| ダッシュボード | `/admin` | 優先度スコア(署名スコア+オープンデータスコア)順の一覧。管轄・判定方法バッジも表示。**自分の管轄(`AdminRole.authorityId`)の提案のみ表示**(全域担当は絞り込み無し) |
+| 提案詳細 | `/admin/[id]` | 本名・優先度スコア内訳・場所(地図)・進捗ステッパー・送信予定(通知ログ)を表示、ステータス変更操作。管轄外の提案は閲覧不可 |
+| ステータス変更 | `changeStatus`アクション | `STATUS_TRANSITIONS`で許可された遷移のみ実行可能。管轄外は操作不可 |
 
-管理画面は行政職員アカウント(`userType: "admin"`)のみアクセス可能(`admin/(protected)/layout.tsx`でガード)。
+管理画面は行政職員アカウント(`userType: "admin"`)のみアクセス可能(`admin/(protected)/layout.tsx`でガード)。管轄の絞り込みは[06-admin-data-flow.md](./06-admin-data-flow.md)参照。
 
 ## 提案のステータス遷移
 
@@ -53,4 +53,3 @@ draft → collecting → screening → adopted → in_progress → completed
 
 - 管轄先への実際のメール送信(`NotificationLog`に「送信予定」として記録するのみ)
 - 道路(都道/区道)の網羅的な自動判定(構造化された道路管理オープンデータが実質存在しないため。[05-roadmap.md](./05-roadmap.md)参照)
-- `AdminRole.jurisdictionScope`によるダッシュボードの絞り込み(現状は表示ラベルのみで、フィルタには使っていない)

@@ -64,7 +64,7 @@ export default function StatusStepper({
             </span>
             <span
               className={`text-[11px] leading-tight ${
-                active ? "font-semibold text-forest-900" : reached ? "text-forest-700" : "text-slate-400"
+                active ? "font-semibold text-forest-900" : reached ? "text-forest-700" : "text-stone-400"
               }`}
             >
               {PROPOSAL_STATUS_LABELS[step]}

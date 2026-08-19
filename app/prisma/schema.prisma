@@ -98,6 +98,7 @@ model Authority {
   roadSegments     RoadSegment[]
   jurisdictions    Jurisdiction[]
   notificationLogs NotificationLog[]
+  adminRoles       AdminRole[]
 
   @@map("authorities")
 }
@@ -204,11 +205,15 @@ model GreenAgreement {
 }
 
 model AdminRole {
-  id                String @id @default(cuid())
-  userId            String @unique
-  user              User   @relation(fields: [userId], references: [id])
-  jurisdictionScope String
-  roleLevel         String @default("reviewer") // reviewer | approver
+  id                String     @id @default(cuid())
+  userId            String     @unique
+  user              User       @relation(fields: [userId], references: [id])
+  jurisdictionScope String // 表示用ラベル(例: "世田谷区 みどり公園課")。authorityIdと内容を揃える。
+  // 実際のダッシュボード絞り込みに使うキー。nullなら全域(全提案)を閲覧できる
+  // 統括アカウント、値があればそのAuthorityが管轄する提案のみ閲覧・操作できる。
+  authorityId       String?
+  authority         Authority? @relation(fields: [authorityId], references: [id])
+  roleLevel         String     @default("reviewer") // reviewer | approver
 
   @@map("admin_roles")
 }

@@ -14,8 +14,16 @@ export default async function AdminDashboardPage() {
   const user = await getCurrentUser();
   if (!user) return null; // layoutの認証ガードにより実際には到達しない(型の絞り込み用)
 
+  // 管轄の絞り込み: AdminRole.authorityIdが設定されていれば、その担当部署が
+  // 管轄すると判定された提案(Jurisdiction.authorityId一致)のみを表示する。
+  // authorityIdが無い(全域担当)アカウントは絞り込み無しで全件を見られる。
+  // 例:「世田谷区 みどり政策課」担当者には、世田谷区の公園に関する提案のみが見える。
+  const authorityId = user.adminRole?.authorityId ?? null;
+  const jurisdictionFilter = authorityId ? { jurisdiction: { authorityId } } : {};
+
   // 情報フローは docs/06-admin-data-flow.md 参照。署名者個人の情報はここでも取得しない。
   const proposals = await prisma.proposal.findMany({
+    where: jurisdictionFilter,
     include: { signatures: { select: { id: true } }, score: true, jurisdiction: true },
     orderBy: [{ score: { totalScore: "desc" } }],
   });
@@ -29,6 +37,7 @@ export default async function AdminDashboardPage() {
       <p className="text-sm text-stone-600 mb-6">
         優先度スコアが高い順に表示しています。{user.adminRole?.jurisdictionScope ?? "全域"}担当:{" "}
         {user.displayName}
+        {authorityId && <span className="text-stone-400">(自分の管轄の提案のみ表示中)</span>}
       </p>
 
       <div className="overflow-x-auto rounded-sm border border-stone-200 bg-white">
