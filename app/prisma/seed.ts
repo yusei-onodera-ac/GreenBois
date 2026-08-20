@@ -142,15 +142,19 @@ async function main() {
     signatureTarget: number;
     signerCount: number;
     daysAgo: number; // 投稿からの経過日数(新着順の並び用)
-    photoKeywords: string; // LoremFlickr(無償のフリー素材風プレースホルダー画像サービス)検索キーワード
+    photoKeywords: string; // プレースホルダー画像のシード文字列(内容と紐づけた命名のみ。取得先はPicsum)
   };
 
-  // LoremFlickr: キーワードに基づくフリー画像プレースホルダーサービス。
-  // lock番号を固定することで、同じ提案には毎回同じ画像が表示されるようにする。
+  // Picsum Photos(https://picsum.photos)のシード指定URL。無償・キー不要で、
+  // 同じシード文字列なら常に同じ画像が返る。
+  // 以前はLoremFlickr(キーワード検索型)を使っていたが、2026年8月時点で
+  // 複数キーワード指定はほぼ確実に500を返し、単一キーワードでも約半数が失敗する状態に
+  // なっていた(サービス側の不具合とみられる。docs/03-external-integration.md参照)。
+  // Picsumはキーワードに基づく画像選択はできない(ランダムな実写真)が、可用性を優先した。
   let photoLock = 0;
   function photoUrl(keywords: string): string {
     photoLock += 1;
-    return `https://loremflickr.com/480/320/${encodeURIComponent(keywords)}?lock=${photoLock}`;
+    return `https://picsum.photos/seed/${encodeURIComponent(keywords)}-${photoLock}/480/320`;
   }
 
   const specs: Spec[] = [
