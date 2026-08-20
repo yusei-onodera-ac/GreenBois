@@ -8,6 +8,7 @@ import CategoryIcon from "@/components/CategoryIcon";
 import StatusBadge from "@/components/StatusBadge";
 import StatusStepper from "@/components/StatusStepper";
 import DeterminationBadge from "@/components/DeterminationBadge";
+import ProposalLocationMap from "@/components/ProposalLocationMap";
 import { CheckIcon } from "@/components/icons";
 import {
   PROPOSAL_CATEGORY_LABELS,
@@ -49,7 +50,7 @@ export default async function ProposalDetailPage({
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <Link href="/map" className="text-sm text-forest-700 hover:text-forest-900 transition-colors">
-        ← マップに戻る
+        ← HOMEに戻る
       </Link>
 
       <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_320px] items-start">
@@ -86,8 +87,14 @@ export default async function ProposalDetailPage({
             </p>
           )}
 
+          {/* --- 場所(正確な位置をピンで表示。閲覧専用・移動不可) --- */}
+          <div className="mt-6 rounded-sm border border-slate-200 bg-white p-4">
+            <h2 className="font-display font-semibold text-forest-950 mb-3 text-sm">場所</h2>
+            <ProposalLocationMap lat={proposal.lat} lng={proposal.lng} className="h-56" />
+          </div>
+
           {/* --- 進捗 --- */}
-          <div className="mt-8 rounded-sm border border-slate-200 bg-white p-6">
+          <div className="mt-6 rounded-sm border border-slate-200 bg-white p-6">
             <h2 className="font-display font-semibold text-forest-950 mb-5">進捗状況</h2>
             <StatusStepper status={proposal.status} />
           </div>

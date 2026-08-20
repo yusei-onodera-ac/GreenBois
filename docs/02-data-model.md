@@ -52,7 +52,7 @@ erDiagram
 管轄先の実体(部署)。`category`(`park`|`road`|`private`|`other`)、`ward`(都道府県道・都立施設担当はnull)、`contactEmail`(実在確認できたもののみ。無ければnull)、`sourceNote`(部署名・連絡先の出典メモ)。`app/prisma/ingest/seedAuthorities.ts`で投入する。
 
 ### PublicSite
-都・区市町村が管理する公園・図書館・道路のマスタ。新規提案フォームの「区市→施設名」選択、および管轄自動判定の近傍一致に使う。`sourceUrl`(オープンデータの出典URL。手打ちデータはnull)、`authorityId`(取り込み時に紐付け済みの担当部署)。**23区中15区・約3,300件**が東京都オープンデータの実データ(`app/prisma/ingest/fetchParks.ts`)、残りは元からの手打ちデータ。
+都・区市町村が管理する公園・図書館・道路のマスタ。新規提案フォームの「区市→施設名」選択、および管轄自動判定の近傍一致に使う。`sourceUrl`(オープンデータの出典URL。手打ちデータはnull)、`authorityId`(取り込み時に紐付け済みの担当部署)。**23区中18区・約3,700件**が東京都オープンデータの実データ(`app/prisma/ingest/fetchParks.ts`)、残りは元からの手打ちデータ。
 
 ### RoadSegment
 道路網データのキャッシュ用に用意したモデル(`roadTypeCode`/`roadTypeLabel`/`geometry`など)。**現時点では未投入(空テーブル)**。国土交通省「国土数値情報」道路データ(N01)の生きた配布リンクが見つからず、代替のN06は高速道路専用データだったため、実データを取り込めていない。詳細は[05-roadmap.md](./05-roadmap.md)。
@@ -64,4 +64,4 @@ erDiagram
 予算枠・予算配分・緑地協定(私有地緑化の継続年数管理)。現状はシードデータのみで、専用の操作画面はまだ無い。
 
 ### AdminRole
-行政職員の担当スコープ表示用(`jurisdictionScope`は自由文字列)。**現状はダッシュボードのフィルタには使っておらず、表示ラベルのみ**(どの行政職員も全提案を閲覧・操作できる)。
+行政職員の担当スコープ。`jurisdictionScope`は表示用の自由文字列、`authorityId`(`Authority`への参照、nullable)が実際の絞り込みキー。`authorityId`が設定されている行政職員は、その`Authority`が管轄する提案(`Jurisdiction.authorityId`一致)のみダッシュボード一覧・詳細ページで閲覧でき、ステータス変更もその範囲に限られる。`authorityId`が`null`の場合は全域担当として全提案を閲覧・操作できる(シードデータでは「東京都 建設局 担当者」のみがこの全域担当)。

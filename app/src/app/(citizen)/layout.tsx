@@ -77,10 +77,10 @@ export default async function CitizenLayout({ children }: { children: React.Reac
             <p className="font-semibold text-forest-800 mb-2.5">サービス</p>
             <ul className="space-y-1.5 text-slate-500">
               <li>
-                <Link href="/map" className="hover:text-forest-700 transition-colors">マップ</Link>
+                <Link href="/map" className="hover:text-forest-700 transition-colors">HOME</Link>
               </li>
               <li>
-                <Link href="/proposals" className="hover:text-forest-700 transition-colors">提案一覧</Link>
+                <Link href="/proposals" className="hover:text-forest-700 transition-colors">みんなの声</Link>
               </li>
               <li>
                 <Link href="/proposals/new" className="hover:text-forest-700 transition-colors">提案する</Link>

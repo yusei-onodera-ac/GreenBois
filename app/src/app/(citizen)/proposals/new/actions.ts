@@ -24,6 +24,9 @@ export async function createProposal(formData: FormData) {
   // (管轄自動判定の区フォールバックに使う。空文字なら未取得としてnull扱い)
   const wardRaw = String(formData.get("ward") ?? "").trim();
   const ward = wardRaw || null;
+  // 都民が「この場所を公道として投稿する」を選んだ場合のみ"true"
+  // (LocationPicker.tsx参照。区フォールバックで道路担当を選ぶためのヒント)。
+  const isRoadFallback = formData.get("isRoadFallback") === "true";
 
   // 複数枚(最大5枚)対応。input側にmax指定は無いため、フォーム改ざん等での
   // 過剰送信に備えてサーバー側でも上限チェックする。
@@ -61,7 +64,7 @@ export async function createProposal(formData: FormData) {
     },
   });
 
-  const jurisdiction = await determineJurisdiction({ lat, lng, landType, ward });
+  const jurisdiction = await determineJurisdiction({ lat, lng, landType, ward, roadHint: isRoadFallback });
   await prisma.jurisdiction.create({
     data: { proposalId: proposal.id, ...jurisdiction },
   });

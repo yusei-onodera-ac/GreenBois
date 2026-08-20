@@ -10,6 +10,16 @@ import { LandType } from "@/lib/enums";
 //       実データ(15区・約3,300件の公園)と、既存の手打ちデータ(図書館・道路等)を含む)
 //   2. 区がわかれば区の担当部署にフォールバック — ward_fallback
 //      (区名はLocationPicker.tsxのGSI逆ジオコーディングから来る)
+//      1.が空振りした場合、道路か公園かはroadHint(呼び出し元から渡される。
+//      新規提案フォームで都民が「公道として投稿」を選んだ場合にtrueになる)で決める。
+//      以前はここが常に公園担当固定だったバグがあった(道路沿いの提案でも公園に回っていた)。
+//
+//      なお、東京都の道路管轄データ(国土数値情報N01)は入手不可と確定済み、OSM
+//      Overpass APIでのライブ判定も検討したが、新規提案フォームは「PublicSiteに登録済みの
+//      地点しか選べない」制約があり、実際の投稿経路ではPublicSite一致が必ず先に決着するため
+//      ライブ照会は実質的に到達しないコードになってしまうと判明した。都道/区道の
+//      厳密な分類をあきらめてでも、都民自身が「公道」と申告し、既に取得済みの区名(住所)
+//      だけで区の道路担当へルーティングする方が、実際に機能するシンプルな解決策になる。
 //   3. 従来のlandType固定表(最終フォールバック。GIS/施設データが無い場合でも
 //      必ず何かを返す) — manual_review
 //
@@ -17,9 +27,9 @@ import { LandType } from "@/lib/enums";
 // 未投入環境(Authorityテーブルが空)でも3.の固定表で必ず動作する(後方互換)。
 
 // LocationPicker.tsxのSITE_AUTO_MATCH_RADIUS_Mと同じ値・同じ判定方式に揃える
-// (以前は単純な全件最短距離・250mだったため、密な公園データに道路判定が
-// 埋もれてしまう問題があった。pickNearestByPriorityで種別優先度も考慮する)。
-const SITE_MATCH_RADIUS_M = 80;
+// (250m→80m→15mと縮小してきた経緯はLocationPicker.tsx参照。80mでは施設のすぐ近くの
+// 道路が施設側に判定され、「公道として投稿」の道が塞がれてしまっていたため)。
+const SITE_MATCH_RADIUS_M = 15;
 
 // 従来のlandType固定表(GIS/施設データが一切無い場合の最終フォールバック。
 // 既存コードをそのまま温存。TODO表記は歴史的経緯として残す)。
@@ -67,8 +77,12 @@ export async function determineJurisdiction(params: {
   lng: number;
   landType: LandType;
   ward?: string | null;
+  // 新規提案フォームで、都民が「この場所を公道として投稿する」を選んだ場合にtrue。
+  // PublicSite一致が無かった場合の区フォールバックで、公園ではなく道路担当を選ぶために使う
+  // (LocationPicker.tsx参照。都道/区道の区別まではできないため、区の道路担当に一律ルーティングする)。
+  roadHint?: boolean;
 }): Promise<JurisdictionResult> {
-  const { lat, lng, landType, ward } = params;
+  const { lat, lng, landType, ward, roadHint } = params;
 
   // 1. 施設・道路の近傍一致(全件距離計算。SQLiteに空間インデックスが無いため。
   //    件数規模的にリクエスト毎の全件走査で十分高速 — src/lib/geo.ts参照)
@@ -89,9 +103,10 @@ export async function determineJurisdiction(params: {
   }
 
   // 2. 区フォールバック(施設一致が無くても、区がわかれば区の担当部署を返す。
-  //    道路か公園かは判別できないため、デフォルトで「公園」担当を返す)
+  //    roadHintがtrueなら「道路」担当、そうでなければ従来通り「公園」担当)
+  const fallbackCategory: "park" | "road" = roadHint ? "road" : "park";
   if (ward) {
-    const authority = await resolveAuthority({ ward, category: "park", landType });
+    const authority = await resolveAuthority({ ward, category: fallbackCategory, landType });
     if (authority) {
       return { authorityId: authority.id, authorityName: authority.name, determinationMethod: "ward_fallback" };
     }
@@ -99,7 +114,7 @@ export async function determineJurisdiction(params: {
 
   // 3. 都全域(landType=public_metro)は区が不明でも建設局にフォールバックできる
   if (landType === "public_metro") {
-    const authority = await resolveAuthority({ ward: null, category: "park", landType });
+    const authority = await resolveAuthority({ ward: null, category: fallbackCategory, landType });
     if (authority) {
       return { authorityId: authority.id, authorityName: authority.name, determinationMethod: "ward_fallback" };
     }
